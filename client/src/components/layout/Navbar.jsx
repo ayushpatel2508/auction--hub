@@ -150,14 +150,14 @@ const Navbar = () => {
             {/* Mobile Menu Overlay */}
             {isMobileMenuOpen && (
                 <div
-                    className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+                    className="fixed inset-0 bg-black bg-opacity-50 z-[9998] md:hidden"
                     onClick={closeMobileMenu}
                 ></div>
             )}
 
-            {/* Mobile Side Menu */}
-            <div className={`fixed top-0 left-0 h-full w-3/5 z-50 md:hidden transform transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-                }`} style={{ background: 'var(--bg-primary)' }}>
+            {/* Mobile Side Menu - Slides from RIGHT */}
+            <div className={`fixed top-0 right-0 h-full w-3/5 z-[9999] md:hidden transform transition-transform duration-300 ease-in-out shadow-2xl ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+                }`} style={{ background: 'var(--bg-primary)', border: '2px solid var(--accent-primary)' }}>
 
                 {/* Menu Header */}
                 <div className="flex items-center justify-between p-4 border-b-2" style={{ borderBottomColor: 'var(--accent-primary)' }}>
@@ -172,7 +172,7 @@ const Navbar = () => {
                     </div>
                     <button
                         onClick={closeMobileMenu}
-                        className="p-2 rounded-lg transition-all duration-300"
+                        className="p-2 rounded-lg transition-all duration-300 hover:bg-red-100"
                         style={{ color: 'var(--text-primary)' }}
                     >
                         <span className="text-xl">✕</span>
@@ -180,97 +180,79 @@ const Navbar = () => {
                 </div>
 
                 {/* Menu Content */}
-                <div className="p-4 space-y-4 h-full overflow-y-auto">
-
-                    {/* Search Bar */}
-                    <form onSubmit={handleMobileSearchSubmit} className="relative">
-                        <input
-                            type="text"
-                            placeholder="Search auctions..."
-                            value={mobileSearchTerm}
-                            onChange={(e) => setMobileSearchTerm(e.target.value)}
-                            className="input w-full px-4 py-3 rounded-xl border-2 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 backdrop-blur-sm transition-all duration-300 text-sm"
-                        />
-                        <button
-                            type="submit"
-                            className="absolute right-3 top-3 transition-colors"
-                            style={{ color: 'var(--accent-primary)' }}
-                        >
-                            🔍
-                        </button>
-                    </form>
+                <div className="p-6 space-y-6 h-full overflow-y-auto">
 
                     {/* Navigation Links */}
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                         <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
                             Navigation
                         </h3>
                         <Link
                             to="/"
                             onClick={closeMobileMenu}
-                            className="flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-all duration-300 hover:shadow-md"
+                            className="flex items-center space-x-4 px-4 py-4 rounded-lg font-medium transition-all duration-300 hover:shadow-md hover:scale-105"
                             style={{
                                 color: 'var(--text-primary)',
                                 background: 'var(--surface-primary)',
                                 border: '1px solid var(--border-primary)'
                             }}
                         >
-                            <span className="text-lg">🏠</span>
-                            <span>Home</span>
+                            <span className="text-2xl">🏠</span>
+                            <span className="text-lg">Home</span>
                         </Link>
                         <Link
                             to="/auctions"
                             onClick={closeMobileMenu}
-                            className="flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-all duration-300 hover:shadow-md"
+                            className="flex items-center space-x-4 px-4 py-4 rounded-lg font-medium transition-all duration-300 hover:shadow-md hover:scale-105"
                             style={{
                                 color: 'var(--text-primary)',
                                 background: 'var(--surface-primary)',
                                 border: '1px solid var(--border-primary)'
                             }}
                         >
-                            <span className="text-lg">🏛️</span>
-                            <span>Auctions</span>
+                            <span className="text-2xl">🏛️</span>
+                            <span className="text-lg">Auctions</span>
                         </Link>
                     </div>
 
                     {/* User Section */}
-                    <div className="pt-4 border-t" style={{ borderTopColor: 'var(--border-secondary)' }}>
-                        <h3 className="text-sm font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--text-secondary)' }}>
+                    <div className="pt-6 border-t" style={{ borderTopColor: 'var(--border-secondary)' }}>
+                        <h3 className="text-sm font-semibold uppercase tracking-wide mb-4" style={{ color: 'var(--text-secondary)' }}>
                             Account
                         </h3>
                         {isLoggedIn ? (
-                            <div className="space-y-3">
-                                <div className="px-4 py-3 rounded-lg" style={{ background: 'var(--surface-hover)' }}>
-                                    <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Logged in as:</p>
-                                    <p className="font-medium flex items-center space-x-2" style={{ color: 'var(--accent-primary)' }}>
-                                        <span>👤</span>
-                                        <span>{user}</span>
+                            <div className="space-y-4">
+                                <div className="px-4 py-4 rounded-lg" style={{ background: 'var(--surface-hover)' }}>
+                                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Logged in as:</p>
+                                    <p className="font-medium flex items-center space-x-3 mt-2" style={{ color: 'var(--accent-primary)' }}>
+                                        <span className="text-xl">👤</span>
+                                        <span className="text-lg">{user}</span>
                                     </p>
                                 </div>
                                 <button
                                     onClick={handleMobileLogout}
-                                    className="flex items-center space-x-3 w-full px-4 py-3 rounded-lg font-medium transition-all duration-300 hover:shadow-md"
+                                    className="flex items-center space-x-4 w-full px-4 py-4 rounded-lg font-medium transition-all duration-300 hover:shadow-md hover:scale-105"
                                     style={{
                                         background: 'var(--accent-primary)',
                                         color: 'var(--bg-primary)'
                                     }}
                                 >
-                                    <span className="text-lg">🚪</span>
-                                    <span>Logout</span>
+                                    <span className="text-2xl">🚪</span>
+                                    <span className="text-lg">Logout</span>
                                 </button>
                             </div>
                         ) : (
                             <Link
                                 to="/login"
                                 onClick={closeMobileMenu}
-                                className="flex items-center space-x-3 w-full px-4 py-3 rounded-lg font-medium transition-all duration-300 hover:shadow-md"
+                                className="flex items-center space-x-4 w-full px-4 py-4 rounded-lg font-medium transition-all duration-300 hover:shadow-md hover:scale-105"
                                 style={{
                                     background: 'var(--accent-primary)',
                                     color: 'var(--bg-primary)'
                                 }}
                             >
-                                <span className="text-lg">🔑</span>
-                                <span>Login</span>
+                                <span className="text-2xl">🔑</span>
+                                <span className="text-lg">Login</span>
                             </Link>
                         )}
                     </div>
