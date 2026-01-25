@@ -147,21 +147,11 @@ const Navbar = () => {
                 </div>
             </div>
 
-            {/* Mobile Menu Overlay - MAXIMUM OPACITY AND Z-INDEX */}
+            {/* Mobile Side Menu - FULL SCREEN COVERAGE */}
             {isMobileMenuOpen && (
-                <div
-                    className="fixed inset-0 bg-black z-[99998] md:hidden"
-                    style={{ backgroundColor: 'rgba(0, 0, 0, 0.95)' }}
-                    onClick={closeMobileMenu}
-                ></div>
-            )}
-
-            {/* Mobile Side Menu - HIGHEST Z-INDEX */}
-            {isMobileMenuOpen && (
-                <div className="fixed top-0 right-0 h-screen w-3/5 z-[99999] md:hidden shadow-2xl"
+                <div className="fixed top-0 left-0 w-full h-screen z-[99999] md:hidden"
                     style={{
                         background: 'var(--bg-primary)',
-                        border: '2px solid var(--accent-primary)',
                         boxShadow: '0 0 50px rgba(0, 0, 0, 0.8)'
                     }}>
 
@@ -177,8 +167,11 @@ const Navbar = () => {
                         </div>
                         <button
                             onClick={closeMobileMenu}
-                            className="p-2 rounded-lg transition-all duration-300 hover:bg-red-100"
-                            style={{ color: 'var(--text-primary)' }}
+                            className="p-2 rounded-lg transition-all duration-300"
+                            style={{
+                                color: 'var(--text-primary)',
+                                background: 'var(--surface-hover)'
+                            }}
                         >
                             <span className="text-xl">✕</span>
                         </button>
@@ -196,7 +189,7 @@ const Navbar = () => {
                                 <Link
                                     to="/"
                                     onClick={closeMobileMenu}
-                                    className="flex items-center space-x-4 px-4 py-4 rounded-lg font-medium transition-all duration-300 hover:shadow-md hover:scale-105"
+                                    className="block w-full px-4 py-4 rounded-lg font-medium transition-all duration-300 hover:shadow-md text-center"
                                     style={{
                                         color: 'var(--text-primary)',
                                         background: 'var(--surface-primary)',
@@ -208,7 +201,7 @@ const Navbar = () => {
                                 <Link
                                     to="/auctions"
                                     onClick={closeMobileMenu}
-                                    className="flex items-center space-x-4 px-4 py-4 rounded-lg font-medium transition-all duration-300 hover:shadow-md hover:scale-105"
+                                    className="block w-full px-4 py-4 rounded-lg font-medium transition-all duration-300 hover:shadow-md text-center"
                                     style={{
                                         color: 'var(--text-primary)',
                                         background: 'var(--surface-primary)',
@@ -226,15 +219,15 @@ const Navbar = () => {
                                 </h3>
                                 {isLoggedIn ? (
                                     <div className="space-y-4">
-                                        <div className="px-4 py-4 rounded-lg" style={{ background: 'var(--surface-hover)' }}>
+                                        <div className="px-4 py-4 rounded-lg text-center" style={{ background: 'var(--surface-hover)' }}>
                                             <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Logged in as:</p>
-                                            <p className="font-medium flex items-center space-x-3 mt-2" style={{ color: 'var(--accent-primary)' }}>
+                                            <p className="font-medium mt-2" style={{ color: 'var(--accent-primary)' }}>
                                                 <span className="text-lg">{user}</span>
                                             </p>
                                         </div>
                                         <button
                                             onClick={handleMobileLogout}
-                                            className="flex items-center space-x-4 w-full px-4 py-4 rounded-lg font-medium transition-all duration-300 hover:shadow-md hover:scale-105"
+                                            className="w-full px-4 py-4 rounded-lg font-medium transition-all duration-300 hover:shadow-md"
                                             style={{
                                                 background: 'var(--accent-primary)',
                                                 color: 'var(--bg-primary)'
@@ -247,7 +240,7 @@ const Navbar = () => {
                                     <Link
                                         to="/login"
                                         onClick={closeMobileMenu}
-                                        className="flex items-center space-x-4 w-full px-4 py-4 rounded-lg font-medium transition-all duration-300 hover:shadow-md hover:scale-105"
+                                        className="block w-full px-4 py-4 rounded-lg font-medium transition-all duration-300 hover:shadow-md text-center"
                                         style={{
                                             background: 'var(--accent-primary)',
                                             color: 'var(--bg-primary)'
