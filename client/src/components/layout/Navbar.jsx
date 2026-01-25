@@ -5,8 +5,6 @@ import { useAuth } from '../../contexts/AuthContext';
 const Navbar = () => {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
-    const [searchTerm, setSearchTerm] = useState('');
-    const [mobileSearchTerm, setMobileSearchTerm] = useState('');
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     // Check if user is logged in and get user info
@@ -19,25 +17,6 @@ const Navbar = () => {
         } catch (error) {
             navigate('/login');
         }
-    };
-
-    const handleSearch = (term) => {
-        if (term.trim()) {
-            navigate(`/auctions?search=${encodeURIComponent(term.trim())}`);
-        } else {
-            navigate('/auctions');
-        }
-    };
-
-    const handleSearchSubmit = (e) => {
-        e.preventDefault();
-        handleSearch(searchTerm);
-    };
-
-    const handleMobileSearchSubmit = (e) => {
-        e.preventDefault();
-        handleSearch(mobileSearchTerm);
-        setIsMobileMenuOpen(false); // Close mobile menu after search
     };
 
     const toggleMobileMenu = () => {
@@ -82,110 +61,94 @@ const Navbar = () => {
                         </Link>
                     </div>
 
+                    {/* Navigation Links - Desktop */}
+                    <div className="hidden md:flex items-center space-x-8">
+                        <Link
+                            to="/"
+                            className="relative px-4 py-2 font-medium transition-colors duration-300 hover:text-orange-600 group"
+                            style={{ color: 'var(--text-secondary)' }}
+                        >
+                            Home
+                            <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-gradient-to-r from-orange-500 to-orange-600 transition-all duration-300 group-hover:w-full group-hover:left-0"></span>
+                        </Link>
+                        <Link
+                            to="/auctions"
+                            className="relative px-4 py-2 font-medium transition-colors duration-300 hover:text-orange-600 group"
+                            style={{ color: 'var(--text-secondary)' }}
+                        >
+                            Auctions
+                            <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-gradient-to-r from-orange-500 to-orange-600 transition-all duration-300 group-hover:w-full group-hover:left-0"></span>
+                        </Link>
 
-                    {/* Navigation Links */}
-                    <div className="flex items-center space-x-6">
-
-                        {/* Main Navigation */}
-                        <div className="hidden md:flex space-x-6">
-                            <Link
-                                to="/"
-                                className="relative px-4 py-2 font-medium transition-colors duration-300 hover:text-orange-600 group"
-                                style={{ color: 'var(--text-secondary)' }}
-                            >
-                                Home
-                                <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-gradient-to-r from-orange-500 to-orange-600 transition-all duration-300 group-hover:w-full group-hover:left-0"></span>
-                            </Link>
-                            <Link
-                                to="/auctions"
-                                className="relative px-4 py-2 font-medium transition-colors duration-300 hover:text-orange-600 group"
-                                style={{ color: 'var(--text-secondary)' }}
-                            >
-                                Auctions
-                                <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-gradient-to-r from-orange-500 to-orange-600 transition-all duration-300 group-hover:w-full group-hover:left-0"></span>
-                            </Link>
-
-                        </div>
-
-                        {/* User Section */}
-                        <div className="flex items-center space-x-4">
-                            {isLoggedIn ? (
-                                <>
-                                    {/* Logout Button - Desktop Only */}
-                                    <button
-                                        onClick={handleLogout}
-                                        className="hidden md:block btn btn-secondary hover:shadow-lg px-6 py-2 rounded-xl transition-all duration-300 font-medium transform hover:scale-105 border"
-                                    >
-                                        Logout
-                                    </button>
-                                </>
-                            ) : (
-                                /* Login Button */
-                                <Link
-                                    to="/login"
-                                    className="btn btn-primary hover:shadow-lg px-6 py-2 rounded-xl transition-all duration-300 font-medium transform hover:scale-105"
-                                >
-                                    Login
-                                </Link>
-                            )}
-                        </div>
-
-                        {/* Mobile Menu Button */}
-                        <div className="md:hidden">
+                        {/* Login/Logout Button */}
+                        {isLoggedIn ? (
                             <button
-                                onClick={toggleMobileMenu}
-                                className="p-2 rounded-lg transition-all duration-300"
-                                style={{
-                                    color: 'var(--text-primary)',
-                                    background: isMobileMenuOpen ? 'var(--surface-hover)' : 'transparent'
-                                }}
+                                onClick={handleLogout}
+                                className="btn btn-secondary hover:shadow-lg px-6 py-2 rounded-xl transition-all duration-300 font-medium transform hover:scale-105 border"
                             >
-                                <span className="text-xl">{isMobileMenuOpen ? '✕' : '☰'}</span>
+                                Logout
                             </button>
-                        </div>
+                        ) : (
+                            <Link
+                                to="/login"
+                                className="btn btn-primary hover:shadow-lg px-6 py-2 rounded-xl transition-all duration-300 font-medium transform hover:scale-105"
+                            >
+                                Login
+                            </Link>
+                        )}
+                    </div>
+
+                    {/* Mobile Menu Button */}
+                    <div className="md:hidden">
+                        <button
+                            onClick={toggleMobileMenu}
+                            className="p-2 rounded-lg transition-all duration-300"
+                            style={{
+                                color: 'var(--text-primary)',
+                                background: isMobileMenuOpen ? 'var(--surface-hover)' : 'transparent'
+                            }}
+                        >
+                            <span className="text-xl">{isMobileMenuOpen ? '✕' : '☰'}</span>
+                        </button>
                     </div>
                 </div>
             </div>
 
-            {/* Mobile Side Menu - FULL SCREEN COVERAGE */}
+            {/* Mobile Sidebar Menu */}
             {isMobileMenuOpen && (
-                <div className="fixed top-0 left-0 w-full h-screen z-[99999] md:hidden"
-                    style={{
-                        background: 'var(--bg-primary)',
-                        boxShadow: '0 0 50px rgba(0, 0, 0, 0.8)'
-                    }}>
+                <>
+                    {/* Backdrop */}
+                    <div
+                        className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+                        onClick={closeMobileMenu}
+                    ></div>
 
-                    {/* Menu Header */}
-                    <div className="flex items-center justify-between p-4 border-b-2" style={{ borderBottomColor: 'var(--accent-primary)' }}>
-                        <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{
-                                background: 'var(--gradient-primary)',
-                                boxShadow: '0 3px 12px rgba(210, 105, 30, 0.4)'
-                            }}>
-                            </div>
+                    {/* Sidebar */}
+                    <div className="fixed top-0 right-0 w-80 h-full z-50 md:hidden transform transition-transform duration-300"
+                        style={{
+                            background: 'var(--bg-primary)',
+                            boxShadow: '-5px 0 15px rgba(0, 0, 0, 0.2)'
+                        }}>
+
+                        {/* Sidebar Header */}
+                        <div className="flex items-center justify-between p-6 border-b-2" style={{ borderBottomColor: 'var(--accent-primary)' }}>
                             <span className="text-lg font-bold text-gradient">Menu</span>
+                            <button
+                                onClick={closeMobileMenu}
+                                className="p-2 rounded-lg transition-all duration-300"
+                                style={{
+                                    color: 'var(--text-primary)',
+                                    background: 'var(--surface-hover)'
+                                }}
+                            >
+                                <span className="text-xl">✕</span>
+                            </button>
                         </div>
-                        <button
-                            onClick={closeMobileMenu}
-                            className="p-2 rounded-lg transition-all duration-300"
-                            style={{
-                                color: 'var(--text-primary)',
-                                background: 'var(--surface-hover)'
-                            }}
-                        >
-                            <span className="text-xl">✕</span>
-                        </button>
-                    </div>
 
-                    {/* Menu Content - Full Height with Proper Scrolling */}
-                    <div className="flex flex-col h-full">
-                        <div className="flex-1 p-6 space-y-6 overflow-y-auto">
-
+                        {/* Sidebar Content */}
+                        <div className="p-6 space-y-6">
                             {/* Navigation Links */}
                             <div className="space-y-4">
-                                <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
-                                    Navigation
-                                </h3>
                                 <Link
                                     to="/"
                                     onClick={closeMobileMenu}
@@ -212,11 +175,8 @@ const Navbar = () => {
                                 </Link>
                             </div>
 
-                            {/* User Section */}
+                            {/* Login/Logout Section */}
                             <div className="pt-6 border-t" style={{ borderTopColor: 'var(--border-secondary)' }}>
-                                <h3 className="text-sm font-semibold uppercase tracking-wide mb-4" style={{ color: 'var(--text-secondary)' }}>
-                                    Account
-                                </h3>
                                 {isLoggedIn ? (
                                     <div className="space-y-4">
                                         <div className="px-4 py-4 rounded-lg text-center" style={{ background: 'var(--surface-hover)' }}>
@@ -252,7 +212,7 @@ const Navbar = () => {
                             </div>
                         </div>
                     </div>
-                </div>
+                </>
             )}
         </nav>
     );
