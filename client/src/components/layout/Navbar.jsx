@@ -147,18 +147,23 @@ const Navbar = () => {
                 </div>
             </div>
 
-            {/* Mobile Menu Overlay - More Opaque */}
+            {/* Mobile Menu Overlay - MAXIMUM OPACITY AND Z-INDEX */}
             {isMobileMenuOpen && (
                 <div
-                    className="fixed inset-0 bg-black bg-opacity-80 z-[9998] md:hidden"
+                    className="fixed inset-0 bg-black z-[99998] md:hidden"
+                    style={{ backgroundColor: 'rgba(0, 0, 0, 0.95)' }}
                     onClick={closeMobileMenu}
                 ></div>
             )}
 
-            {/* Mobile Side Menu - PROPERLY HIDDEN BY DEFAULT */}
+            {/* Mobile Side Menu - HIGHEST Z-INDEX */}
             {isMobileMenuOpen && (
-                <div className="fixed top-0 right-0 h-screen w-3/5 z-[9999] md:hidden transform transition-transform duration-300 ease-in-out shadow-2xl translate-x-0"
-                    style={{ background: 'var(--bg-primary)', border: '2px solid var(--accent-primary)' }}>
+                <div className="fixed top-0 right-0 h-screen w-3/5 z-[99999] md:hidden shadow-2xl"
+                    style={{
+                        background: 'var(--bg-primary)',
+                        border: '2px solid var(--accent-primary)',
+                        boxShadow: '0 0 50px rgba(0, 0, 0, 0.8)'
+                    }}>
 
                     {/* Menu Header */}
                     <div className="flex items-center justify-between p-4 border-b-2" style={{ borderBottomColor: 'var(--accent-primary)' }}>
