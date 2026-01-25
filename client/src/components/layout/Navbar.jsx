@@ -7,6 +7,7 @@ const Navbar = () => {
     const { user, logout } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
     const [mobileSearchTerm, setMobileSearchTerm] = useState('');
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     // Check if user is logged in and get user info
     const isLoggedIn = !!user;
@@ -36,6 +37,26 @@ const Navbar = () => {
     const handleMobileSearchSubmit = (e) => {
         e.preventDefault();
         handleSearch(mobileSearchTerm);
+        setIsMobileMenuOpen(false); // Close mobile menu after search
+    };
+
+    const toggleMobileMenu = () => {
+        setIsMobileMenuOpen(!isMobileMenuOpen);
+    };
+
+    const closeMobileMenu = () => {
+        setIsMobileMenuOpen(false);
+    };
+
+    const handleMobileLogout = async () => {
+        try {
+            await logout();
+            setIsMobileMenuOpen(false);
+            navigate('/login');
+        } catch (error) {
+            setIsMobileMenuOpen(false);
+            navigate('/login');
+        }
     };
 
     return (
@@ -109,20 +130,10 @@ const Navbar = () => {
                         <div className="flex items-center space-x-4">
                             {isLoggedIn ? (
                                 <>
-                                    {/* User Greeting
-                                    <div className="hidden sm:flex items-center space-x-3 bg-white/10 px-4 py-2 rounded-xl border border-white/20">
-                                        <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full flex items-center justify-center">
-                                            <span className="text-sm">👤</span>
-                                        </div>
-                                        <span className="text-sm font-medium">
-                                            Welcome, <span className="text-purple-300">{user}</span>
-                                        </span>
-                                    </div> */}
-
-                                    {/* Logout Button */}
+                                    {/* Logout Button - Desktop Only */}
                                     <button
                                         onClick={handleLogout}
-                                        className="btn btn-secondary hover:shadow-lg px-6 py-2 rounded-xl transition-all duration-300 font-medium transform hover:scale-105 border"
+                                        className="hidden md:block btn btn-secondary hover:shadow-lg px-6 py-2 rounded-xl transition-all duration-300 font-medium transform hover:scale-105 border"
                                     >
                                         Logout
                                     </button>
@@ -140,27 +151,116 @@ const Navbar = () => {
 
                         {/* Mobile Menu Button */}
                         <div className="md:hidden">
-                            <button className="text-white hover:text-purple-300 p-2 rounded-lg hover:bg-white/10 transition-all duration-300">
-                                <span className="text-xl">☰</span>
+                            <button
+                                onClick={toggleMobileMenu}
+                                className="p-2 rounded-lg transition-all duration-300"
+                                style={{
+                                    color: 'var(--text-primary)',
+                                    background: isMobileMenuOpen ? 'var(--surface-hover)' : 'transparent'
+                                }}
+                            >
+                                <span className="text-xl">{isMobileMenuOpen ? '✕' : '☰'}</span>
                             </button>
                         </div>
                     </div>
                 </div>
 
-                {/* Mobile Search (hidden by default) */}
-                <div className="md:hidden pb-4">
-                    <div className="relative">
-                        <input
-                            type="text"
-                            placeholder="Search auctions..."
-                            className="w-full px-5 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent backdrop-blur-sm transition-all duration-300"
-                        />
-                        <button className="absolute right-3 top-3 text-purple-400 hover:text-purple-300 transition-colors text-lg">
-                            🔍
-                        </button>
+                {/* Mobile Menu */}
+                {isMobileMenuOpen && (
+                    <div className="md:hidden border-t-2" style={{ borderTopColor: 'var(--accent-primary)' }}>
+                        <div className="px-4 py-4 space-y-4" style={{ background: 'var(--bg-primary)' }}>
+
+                            {/* Mobile Search */}
+                            <form onSubmit={handleMobileSearchSubmit} className="relative">
+                                <input
+                                    type="text"
+                                    placeholder="Search auctions..."
+                                    value={mobileSearchTerm}
+                                    onChange={(e) => setMobileSearchTerm(e.target.value)}
+                                    className="input w-full px-5 py-3 rounded-xl border-2 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 backdrop-blur-sm transition-all duration-300"
+                                />
+                                <button
+                                    type="submit"
+                                    className="absolute right-3 top-3 transition-colors text-lg"
+                                    style={{ color: 'var(--accent-primary)' }}
+                                >
+                                    🔍
+                                </button>
+                            </form>
+
+                            {/* Mobile Navigation Links */}
+                            <div className="space-y-2">
+                                <Link
+                                    to="/"
+                                    onClick={closeMobileMenu}
+                                    className="block px-4 py-3 rounded-lg font-medium transition-all duration-300 hover:shadow-md"
+                                    style={{
+                                        color: 'var(--text-primary)',
+                                        background: 'var(--surface-primary)',
+                                        border: '1px solid var(--border-primary)'
+                                    }}
+                                >
+                                    🏠 Home
+                                </Link>
+                                <Link
+                                    to="/auctions"
+                                    onClick={closeMobileMenu}
+                                    className="block px-4 py-3 rounded-lg font-medium transition-all duration-300 hover:shadow-md"
+                                    style={{
+                                        color: 'var(--text-primary)',
+                                        background: 'var(--surface-primary)',
+                                        border: '1px solid var(--border-primary)'
+                                    }}
+                                >
+                                    🏛️ Auctions
+                                </Link>
+                            </div>
+
+                            {/* Mobile User Section */}
+                            {isLoggedIn ? (
+                                <div className="pt-4 border-t" style={{ borderTopColor: 'var(--border-secondary)' }}>
+                                    <div className="mb-3 px-4 py-2 rounded-lg" style={{ background: 'var(--surface-hover)' }}>
+                                        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Logged in as:</p>
+                                        <p className="font-medium" style={{ color: 'var(--accent-primary)' }}>👤 {user}</p>
+                                    </div>
+                                    <button
+                                        onClick={handleMobileLogout}
+                                        className="w-full px-4 py-3 rounded-lg font-medium transition-all duration-300 hover:shadow-md"
+                                        style={{
+                                            background: 'var(--accent-primary)',
+                                            color: 'var(--bg-primary)'
+                                        }}
+                                    >
+                                        🚪 Logout
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="pt-4 border-t" style={{ borderTopColor: 'var(--border-secondary)' }}>
+                                    <Link
+                                        to="/login"
+                                        onClick={closeMobileMenu}
+                                        className="block w-full px-4 py-3 rounded-lg font-medium text-center transition-all duration-300 hover:shadow-md"
+                                        style={{
+                                            background: 'var(--accent-primary)',
+                                            color: 'var(--bg-primary)'
+                                        }}
+                                    >
+                                        🔑 Login
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
+
+            {/* Mobile Menu Overlay */}
+            {isMobileMenuOpen && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+                    onClick={closeMobileMenu}
+                ></div>
+            )}
         </nav>
     );
 };
