@@ -76,7 +76,7 @@ const Navbar = () => {
                                 background: 'var(--gradient-primary)',
                                 boxShadow: '0 3px 12px rgba(210, 105, 30, 0.4)'
                             }}>
-                                <img className="text-2xl" src='../../../logo.png' />
+                                <img src="/logo.png" alt="AuctionHub Logo" className="w-8 h-8 object-contain" />
                             </div>
                             <span className="text-2xl font-bold text-gradient">AuctionHub</span>
                         </Link>
@@ -147,10 +147,10 @@ const Navbar = () => {
                 </div>
             </div>
 
-            {/* Mobile Menu Overlay */}
+            {/* Mobile Menu Overlay - More Opaque */}
             {isMobileMenuOpen && (
                 <div
-                    className="fixed inset-0 bg-black bg-opacity-50 z-[9998] md:hidden"
+                    className="fixed inset-0 bg-black bg-opacity-80 z-[9998] md:hidden"
                     onClick={closeMobileMenu}
                 ></div>
             )}
@@ -209,7 +209,6 @@ const Navbar = () => {
                                     border: '1px solid var(--border-primary)'
                                 }}
                             >
-                                <img src='../../../logo.png' className="text-2xl" />
                                 <span className="text-lg">Auctions</span>
                             </Link>
                         </div>
@@ -224,7 +223,6 @@ const Navbar = () => {
                                     <div className="px-4 py-4 rounded-lg" style={{ background: 'var(--surface-hover)' }}>
                                         <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Logged in as:</p>
                                         <p className="font-medium flex items-center space-x-3 mt-2" style={{ color: 'var(--accent-primary)' }}>
-                                            <span className="text-xl">👤</span>
                                             <span className="text-lg">{user}</span>
                                         </p>
                                     </div>
