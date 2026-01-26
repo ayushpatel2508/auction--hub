@@ -51,12 +51,6 @@ const Navbar = () => {
                     {/* Logo/Brand */}
                     <div className="flex items-center space-x-4">
                         <Link to="/" className="flex items-center space-x-3 group">
-                            <div className="w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-all duration-300" style={{
-                                background: 'var(--gradient-primary)',
-                                boxShadow: '0 3px 12px rgba(210, 105, 30, 0.4)'
-                            }}>
-                                {/* <img src="/logo.png" alt="AuctionHub Logo" className="w-8 h-8 object-contain" /> */}
-                            </div>
                             <span className="text-2xl font-bold text-gradient">AuctionHub</span>
                         </Link>
                     </div>
