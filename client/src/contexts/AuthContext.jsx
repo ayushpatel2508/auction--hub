@@ -16,11 +16,18 @@ export const AuthProvider = ({ children }) => {
 
                 if (storedUser) {
                     // Verify token is still valid by making a test API call
+
+                    // Create timeout controller
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
                     try {
                         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/auth/verify`, {
                             method: 'GET',
                             credentials: 'include', // Send cookies
+                            signal: controller.signal
                         });
+                        clearTimeout(timeoutId);
 
                         if (response.ok) {
                             // Token is valid

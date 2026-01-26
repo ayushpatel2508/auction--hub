@@ -130,29 +130,28 @@ const Home = () => {
 
             <div className="space-y-4 mb-6">
                 <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20 rounded-lg p-3">
+                    <div className="bg-gradient-to-br  border border-black rounded-lg p-3">
                         <p className="text-xs text-gray-400 mb-1">
                             {auction.status === 'active' ? 'Current Bid' : 'Final Bid'}
                         </p>
                         <p className="text-lg font-bold text-green-400">${auction.currentBid}</p>
                     </div>
                     <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20 rounded-lg p-3">
-                        <p className="text-xs text-gray-400 mb-1">Status</p>
-                        <p className={`text-sm font-medium ${auction.status === 'active' ? 'text-green-400' : 'text-red-400'
-                            }`}>
+                        <p className="text-xs text-gray-600 mb-1">Status</p>
+                        <p className="text-sm font-medium text-gray-600">
                             {auction.status === 'active' ? formatTimeLeft(auction.endTime) : 'Ended'}
                         </p>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{
+                    {/* <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{
                         background: 'var(--gradient-primary)'
                     }}>
                         {auction.createdBy.charAt(0).toUpperCase()}
-                    </div>
-                    <span className="text-sm text-gray-400">Created by</span>
-                    <span className="text-sm text-white font-medium">{auction.createdBy}</span>
+                    </div> */}
+                    <span className="text-sm text-black">Created by</span>
+                    <span className="text-sm text-gray-600 font-medium">{auction.createdBy}</span>
                 </div>
 
                 {/* Action Buttons */}
@@ -164,15 +163,15 @@ const Home = () => {
                                 onClick={() => handleDelete(auction.roomId)}
                                 className="btn btn-error w-full text-sm"
                             >
-                                <span>🗑️</span>
+                                
                                 Delete Auction
                             </button>
                         ) : (
                             <div className="rounded-lg p-3 text-center" style={{
                                 background: 'linear-gradient(135deg, rgba(128, 0, 128, 0.1) 0%, rgba(128, 0, 128, 0.05) 100%)',
-                                border: '1px solid rgba(128, 0, 128, 0.3)'
+                                border: '1px solid rgb(0, 0, 0)'
                             }}>
-                                <span className="font-medium text-sm text-purple-600">
+                                <span className="font-medium text-sm text-black">
                                     {auction.winner ? `🏆 Won by: ${auction.winner}` : '❌ No winner'}
                                 </span>
                             </div>
@@ -189,10 +188,10 @@ const Home = () => {
                             </button>
                         ) : (
                             <div className="rounded-lg p-3 text-center" style={{
-                                background: 'linear-gradient(135deg, rgba(70, 130, 180, 0.1) 0%, rgba(70, 130, 180, 0.05) 100%)',
-                                border: '1px solid rgba(70, 130, 180, 0.3)'
+                                background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.05) 100%)',
+                                border: '1px solid rgb(0, 0, 0)'
                             }}>
-                                <span className={`font-medium text-sm ${auction.winner === user ? 'text-green-600' : 'text-blue-600'
+                                <span className={`font-medium text-sm ${auction.winner === user ? 'text-black' : 'text-black'
                                     }`}>
                                     {auction.winner === user ? '🏆 You Won!' :
                                         auction.winner ? `🏆 Won by: ${auction.winner}` :
@@ -357,14 +356,13 @@ const Home = () => {
                 <div>
                     <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
                         <div>
-                            <h2 className="text-3xl font-bold text-white mb-2">
+                            <h2 className="text-3xl font-bold  mb-2" style={{ color: 'var(--text-primary)' }}>
                                 Your Auctions ({createdAuctions.length})
                             </h2>
                             <p className="text-gray-400">Auctions you've created</p>
                         </div>
                         <CreateAuction onAuctionCreated={fetchUserAuctions}>
                             <button className="btn btn-success">
-                                <span>✨</span>
                                 Create New Auction
                             </button>
                         </CreateAuction>
@@ -402,7 +400,6 @@ const Home = () => {
                             <p className="mb-8" style={{ color: 'var(--text-secondary)' }}>You haven't created any auctions yet. Start your first auction today!</p>
                             <CreateAuction onAuctionCreated={fetchUserAuctions}>
                                 <button className="btn btn-primary px-6 py-3 rounded-xl transition-all duration-300 font-medium transform hover:scale-105 flex items-center gap-2 mx-auto">
-                                    <span>✨</span>
                                     Create Your First Auction
                                 </button>
                             </CreateAuction>

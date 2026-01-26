@@ -4,6 +4,7 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api
 
 // Configure axios to send cookies with requests
 axios.defaults.withCredentials = true;
+axios.defaults.timeout = 10000; // 10 seconds timeout
 
 // Helper function to get headers for authenticated requests (using cookies)
 const getAuthHeaders = () => {
