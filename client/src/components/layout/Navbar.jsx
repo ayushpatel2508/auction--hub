@@ -124,10 +124,11 @@ const Navbar = () => {
                     ></div>
 
                     {/* Sidebar */}
-                    <div className="fixed top-0 right-0 w-80 h-full z-50 md:hidden transform transition-transform duration-300"
+                    <div className="fixed top-0 right-0 w-80 h-screen z-50 md:hidden transform transition-transform duration-300"
                         style={{
                             background: 'var(--bg-primary)',
-                            boxShadow: '-5px 0 15px rgba(0, 0, 0, 0.2)'
+                            boxShadow: '-5px 0 15px rgba(0, 0, 0, 0.2)',
+                            borderLeft: '2px solid var(--border-primary)'
                         }}>
 
                         {/* Sidebar Header */}
