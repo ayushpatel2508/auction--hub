@@ -22,32 +22,32 @@ router.post("/register", async (req, res) => {
 
     // Validation
     if (!email || !password || !username) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        msg: "All fields are required" 
+        msg: "All fields are required",
       });
     }
 
     if (password.length < 6) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        msg: "Password must be at least 6 characters" 
+        msg: "Password must be at least 6 characters",
       });
     }
 
     const exists = await User.findOne({ email });
     if (exists) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        msg: "User already exists" 
+        msg: "User already exists",
       });
     }
 
     const usernameExists = await User.findOne({ username });
     if (usernameExists) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        msg: "Username already taken" 
+        msg: "Username already taken",
       });
     }
 
@@ -61,17 +61,17 @@ router.post("/register", async (req, res) => {
 
     // Check if JWT_SECRET is available
     if (!process.env.JWT_SECRET) {
-      return res.status(500).json({ 
+      return res.status(500).json({
         success: false,
-        msg: "Server configuration error" 
+        msg: "Server configuration error",
       });
     }
 
     const token = jwt.sign(
-      { 
+      {
         id: newUser._id,
-        userId: newUser._id, 
-        username: newUser.username 
+        userId: newUser._id,
+        username: newUser.username,
       },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || "1d" }
@@ -90,17 +90,17 @@ router.post("/register", async (req, res) => {
       success: true,
       msg: "User registered successfully",
       username: newUser.username, // Same field as login response
-      user: { 
+      user: {
         id: newUser._id,
-        username: newUser.username, 
-        email: newUser.email 
+        username: newUser.username,
+        email: newUser.email,
       },
     });
   } catch (err) {
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      msg: "Error in register", 
-      error: err.message 
+      msg: "Error in register",
+      error: err.message,
     });
   }
 });
@@ -123,17 +123,17 @@ router.post("/login", async (req, res) => {
 
     // Check if JWT_SECRET is available
     if (!process.env.JWT_SECRET) {
-      return res.status(500).json({ 
+      return res.status(500).json({
         success: false,
-        msg: "Server configuration error" 
+        msg: "Server configuration error",
       });
     }
 
     const token = jwt.sign(
-      { 
+      {
         id: exists._id,
-        userId: exists._id, 
-        username: exists.username 
+        userId: exists._id,
+        username: exists.username,
       },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || "1d" }
@@ -152,7 +152,7 @@ router.post("/login", async (req, res) => {
 
     res.json(response);
   } catch (err) {
-    res.status(500).json({ msg: "Error in login" });
+    res.status(500).json({ msg: "Error in login", err });
   }
 });
 
@@ -164,7 +164,7 @@ router.post("/logout", isLoggedIn, (req, res) => {
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     path: "/",
   });
-  
+
   res.json({ success: true, msg: "logged out success" });
 });
 

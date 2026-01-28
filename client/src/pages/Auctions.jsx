@@ -133,7 +133,6 @@ const Auctions = () => {
           variant="outline"
           className="btn btn-secondary flex items-center space-x-2 rounded-lg"
         >
-          <span>🔄</span>
           <span>Refresh</span>
         </Button>
       </div>
@@ -148,7 +147,6 @@ const Auctions = () => {
           className="input pl-10 rounded-lg"
         />
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <span style={{ color: 'var(--accent-primary)' }}>🔍</span>
         </div>
       </div>
 
