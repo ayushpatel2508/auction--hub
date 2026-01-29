@@ -5,15 +5,30 @@ import { Bid } from "../models/bid.js";
 import { Presence } from "../models/presence.js";
 import { isLoggedIn } from "../middleware/isloggedIn.js";
 import { isAdmin } from "../middleware/isAdmin.js";
+import { upload } from "../middleware/upload.js";
 
 // Export a function that accepts io instance
 export default function(io) {
   const router = express.Router();
 
 // CREATE AUCTION
-router.post("/auction/create", isLoggedIn, async (req, res) => {
+router.post("/auction/create", isLoggedIn, upload.single("image"), async (req, res) => {
   try {
-    const { title, description, startingPrice, duration } = req.body;
+    const { title, productName, description, startingPrice, duration } = req.body;
+
+    // Validate required fields
+    if (!title || !productName || !startingPrice || !duration) {
+      return res.status(400).json({
+        success: false,
+        msg: "Please provide all required fields: title, productName, startingPrice, duration",
+      });
+    }
+
+    // Handle image upload
+    let imageUrl = null;
+    if (req.file) {
+      imageUrl = `/uploads/${req.file.filename}`;
+    }
 
     // Generate roomId
     const roomId = `room_${req.user.username}_${Date.now()}`;
@@ -29,6 +44,8 @@ router.post("/auction/create", isLoggedIn, async (req, res) => {
     const newAuction = await Auction.create({
       roomId,
       title,
+      productName,
+      imageUrl,
       description: description || "",
       startingPrice: Number(startingPrice),
       currentBid: Number(startingPrice),

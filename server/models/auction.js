@@ -6,13 +6,23 @@ const auctionSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
-  title: {
-    type: String,
-    required: true,
-    trim: true,
-    maxlength: 100,
-  },
-  description: {
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 100,
+    },
+    productName: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 100,
+    },
+    imageUrl: {
+      type: String,
+      default: null,
+    },
+    description: {
     type: String,
     trim: true,
     maxlength: 500,

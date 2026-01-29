@@ -3,7 +3,12 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import path from "path";
+import { fileURLToPath } from "url";
 import { rateLimit } from "express-rate-limit";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import { connect } from "./dbconnect/dbconnect.js";
@@ -36,6 +41,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
