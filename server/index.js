@@ -152,7 +152,6 @@ const checkExpiredAuctions = async () => {
         finalStats: finalStats,
         showWinner: true,
       });
-
     }
   } catch (error) {
     // Error checking expired auctions
@@ -169,7 +168,6 @@ app.get("/", (req, res) => {
 });
 
 io.on("connection", (socket) => {
-
   // 1. JOIN AUCTION
   socket.on("join-auction", async (data) => {
     try {
@@ -212,12 +210,12 @@ io.on("connection", (socket) => {
         {
           $addToSet: {
             onlineUsers: username,
-            joinedUsers: username
-          }
+            joinedUsers: username,
+          },
         },
         { new: true } // Return the updated document
       );
-      
+
       // Use the updated document for notifications
       // Emit to the user who joined
       socket.emit("auction-joined", `${username} joined successfully`);
@@ -233,7 +231,6 @@ io.on("connection", (socket) => {
         username: username,
         message: `${username} joined the auction`,
       });
-
     } catch (err) {
       socket.emit("error", "Failed to join auction");
     }
@@ -378,15 +375,13 @@ io.on("connection", (socket) => {
           onlineUsersCount: auction ? auction.onlineUsers.length : 0,
           showAlert: true,
         });
-
       }
-
     } catch (err) {
       // Error on disconnect
     }
   });
 });
 
-server.listen(process.env.PORT || 5000, () => {
+server.listen(process.env.PORT || 6000, () => {
   console.log(`Server is running on port ${process.env.PORT || 5000}`);
 });

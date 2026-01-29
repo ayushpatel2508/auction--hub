@@ -1,216 +1,196 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { 
+    Menu, 
+    X, 
+    Gavel, 
+    User, 
+    LogOut, 
+    LayoutDashboard, 
+    PlusCircle,
+    Bell,
+    Search
+} from 'lucide-react';
+import { Button } from '../ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
-const Navbar = () => {
+export function Navbar() {
+    const { user, logout, isAuthenticated } = useAuth();
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isScrolled, setIsScrolled] = useState(false);
     const navigate = useNavigate();
-    const { user, logout } = useAuth();
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const location = useLocation();
 
-    // Check if user is logged in and get user info
-    const isLoggedIn = !!user;
+    useEffect(() => {
+        const handleScroll = () => {
+            setIsScrolled(window.scrollY > 20);
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     const handleLogout = async () => {
-        try {
-            await logout();
-            navigate('/login');
-        } catch (error) {
-            navigate('/login');
-        }
+        await logout();
+        navigate('/login');
     };
 
-    const toggleMobileMenu = () => {
-        setIsMobileMenuOpen(!isMobileMenuOpen);
-    };
+    const navLinks = [
+        { name: 'Auctions', path: '/auctions' },
+        { name: 'Categories', path: '#' },
+        { name: 'Trending', path: '#' },
+    ];
 
-    const closeMobileMenu = () => {
-        setIsMobileMenuOpen(false);
-    };
-
-    const handleMobileLogout = async () => {
-        try {
-            await logout();
-            setIsMobileMenuOpen(false);
-            navigate('/login');
-        } catch (error) {
-            setIsMobileMenuOpen(false);
-            navigate('/login');
-        }
-    };
+    const isActive = (path) => location.pathname === path;
 
     return (
-        <nav className="shadow-lg backdrop-blur-sm border-b-2 relative z-50" style={{
-            background: 'var(--bg-primary)',
-            borderBottomColor: 'var(--accent-primary)',
-            boxShadow: '0 2px 12px rgba(210, 105, 30, 0.15)',
-            color: 'var(--text-primary)'
-        }}>
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center h-20">
+        <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${
+            isScrolled ? 'bg-background/80 backdrop-blur-md border-b shadow-sm py-2' : 'bg-transparent py-4'
+        }`}>
+            <div className="container mx-auto px-4 md:px-6">
+                <div className="flex items-center justify-between h-16">
+                    {/* Logo */}
+                    <Link to="/" className="flex items-center gap-2 group">
+                        <div className="bg-primary p-2 rounded-xl group-hover:rotate-12 transition-transform duration-300">
+                            <Gavel className="h-6 w-6 text-primary-foreground" />
+                        </div>
+                        <span className="text-2xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
+                            BidMaster
+                        </span>
+                    </Link>
 
-                    {/* Logo/Brand */}
-                    <div className="flex items-center space-x-4">
-                        <Link to="/" className="flex items-center space-x-3 group">
-                            <span className="text-2xl font-bold text-gradient">AuctionHub</span>
-                        </Link>
-                    </div>
-
-                    {/* Navigation Links - Desktop */}
-                    <div className="hidden md:flex items-center space-x-8">
-                        <Link
-                            to="/"
-                            className="relative px-4 py-2 font-medium transition-colors duration-300 hover:text-orange-600 group"
-                            style={{ color: 'var(--text-secondary)' }}
-                        >
-                            Home
-                            <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-gradient-to-r from-orange-500 to-orange-600 transition-all duration-300 group-hover:w-full group-hover:left-0"></span>
-                        </Link>
-                        <Link
-                            to="/auctions"
-                            className="relative px-4 py-2 font-medium transition-colors duration-300 hover:text-orange-600 group"
-                            style={{ color: 'var(--text-secondary)' }}
-                        >
-                            Auctions
-                            <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-gradient-to-r from-orange-500 to-orange-600 transition-all duration-300 group-hover:w-full group-hover:left-0"></span>
-                        </Link>
-
-                        {/* Login/Logout Button */}
-                        {isLoggedIn ? (
-                            <button
-                                onClick={handleLogout}
-                                className="btn btn-secondary hover:shadow-lg px-6 py-2 rounded-xl transition-all duration-300 font-medium transform hover:scale-105 border"
-                            >
-                                Logout
-                            </button>
-                        ) : (
+                    {/* Desktop Navigation */}
+                    <div className="hidden md:flex items-center gap-8">
+                        {navLinks.map((link) => (
                             <Link
-                                to="/login"
-                                className="btn btn-primary hover:shadow-lg px-6 py-2 rounded-xl transition-all duration-300 font-medium transform hover:scale-105"
+                                key={link.name}
+                                to={link.path}
+                                className={`text-sm font-medium transition-colors hover:text-primary ${
+                                    isActive(link.path) ? 'text-primary' : 'text-muted-foreground'
+                                }`}
                             >
-                                Login
+                                {link.name}
                             </Link>
-                        )}
+                        ))}
                     </div>
 
-                    {/* Mobile Menu Button */}
-                    <div className="md:hidden">
-                        <button
-                            onClick={toggleMobileMenu}
-                            className="p-2 rounded-lg transition-all duration-300"
-                            style={{
-                                color: 'var(--text-primary)',
-                                background: isMobileMenuOpen ? 'var(--surface-hover)' : 'transparent'
-                            }}
+                    {/* Search Bar - Desktop */}
+                    <div className="hidden lg:flex items-center relative max-w-xs w-full ml-4">
+                        <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
+                        <input 
+                            type="text" 
+                            placeholder="Search auctions..." 
+                            className="w-full bg-muted/50 border-none rounded-full py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/20 transition-all"
+                        />
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-4">
+                        {isAuthenticated ? (
+                            <>
+                                <Link to="/create-auction" className="hidden sm:block">
+                                    <Button variant="ghost" size="sm" className="gap-2">
+                                        <PlusCircle className="h-4 w-4" />
+                                        <span>Post Auction</span>
+                                    </Button>
+                                </Link>
+                                
+                                <Button variant="ghost" size="icon" className="relative">
+                                    <Bell className="h-5 w-5" />
+                                    <span className="absolute top-2 right-2 h-2 w-2 bg-primary rounded-full border-2 border-background"></span>
+                                </Button>
+
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                                            <Avatar className="h-10 w-10 border-2 border-primary/20 p-0.5">
+                                                <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username}`} />
+                                                <AvatarFallback>{user?.username?.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                            </Avatar>
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="w-56" align="end" forceMount>
+                                        <DropdownMenuLabel className="font-normal">
+                                            <div className="flex flex-col space-y-1">
+                                                <p className="text-sm font-medium leading-none">{user?.username}</p>
+                                                <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+                                            </div>
+                                        </DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={() => navigate('/dashboard')}>
+                                            <LayoutDashboard className="mr-2 h-4 w-4" />
+                                            <span>Dashboard</span>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => navigate('/profile')}>
+                                            <User className="mr-2 h-4 w-4" />
+                                            <span>Profile</span>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => navigate('/create-auction')} className="sm:hidden">
+                                            <PlusCircle className="mr-2 h-4 w-4" />
+                                            <span>Post Auction</span>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+                                            <LogOut className="mr-2 h-4 w-4" />
+                                            <span>Log out</span>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </>
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                <Link to="/login">
+                                    <Button variant="ghost" size="sm">Login</Button>
+                                </Link>
+                                <Link to="/register">
+                                    <Button size="sm">Sign Up</Button>
+                                </Link>
+                            </div>
+                        )}
+
+                        {/* Mobile Menu Toggle */}
+                        <button 
+                            className="md:hidden p-2 rounded-md text-muted-foreground hover:text-primary transition-colors"
+                            onClick={() => setIsMenuOpen(!isMenuOpen)}
                         >
-                            <span className="text-xl">{isMobileMenuOpen ? '✕' : '☰'}</span>
+                            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* Mobile Sidebar Menu */}
-            {isMobileMenuOpen && (
-                <>
-                    {/* Backdrop */}
-                    <div
-                        className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
-                        onClick={closeMobileMenu}
-                    ></div>
-
-                    {/* Sidebar */}
-                    <div className="fixed top-0 right-0 w-80 h-screen z-50 md:hidden transform transition-transform duration-300"
-                        style={{
-                            background: 'var(--bg-primary)',
-                            boxShadow: '-5px 0 15px rgba(0, 0, 0, 0.2)',
-                            borderLeft: '2px solid var(--border-primary)'
-                        }}>
-
-                        {/* Sidebar Header */}
-                        <div className="flex items-center justify-between p-6 border-b-2" style={{ borderBottomColor: 'var(--accent-primary)' }}>
-                            <span className="text-lg font-bold text-gradient">Menu</span>
-                            <button
-                                onClick={closeMobileMenu}
-                                className="p-2 rounded-lg transition-all duration-300"
-                                style={{
-                                    color: 'var(--text-primary)',
-                                    background: 'var(--surface-hover)'
-                                }}
+            {/* Mobile Navigation */}
+            {isMenuOpen && (
+                <div className="md:hidden bg-background border-b animate-in slide-in-from-top duration-300">
+                    <div className="px-4 pt-2 pb-6 space-y-4">
+                        {navLinks.map((link) => (
+                            <Link
+                                key={link.name}
+                                to={link.path}
+                                className="block px-3 py-2 text-base font-medium text-muted-foreground hover:text-primary transition-colors"
+                                onClick={() => setIsMenuOpen(false)}
                             >
-                                <span className="text-xl">✕</span>
-                            </button>
-                        </div>
-
-                        {/* Sidebar Content */}
-                        <div className="p-6 space-y-6" style={{ background: 'var(--bg-primary)' }}>
-                            {/* Navigation Links */}
-                            <div className="space-y-4">
-                                <Link
-                                    to="/"
-                                    onClick={closeMobileMenu}
-                                    className="block w-full px-4 py-4 rounded-lg font-medium transition-all duration-300 hover:shadow-md text-center"
-                                    style={{
-                                        color: 'var(--text-primary)',
-                                        background: 'var(--bg-secondary)',
-                                        border: '1px solid var(--border-primary)'
-                                    }}
-                                >
-                                    <span className="text-lg">Home</span>
-                                </Link>
-                                <Link
-                                    to="/auctions"
-                                    onClick={closeMobileMenu}
-                                    className="block w-full px-4 py-4 rounded-lg font-medium transition-all duration-300 hover:shadow-md text-center"
-                                    style={{
-                                        color: 'var(--text-primary)',
-                                        background: 'var(--bg-secondary)',
-                                        border: '1px solid var(--border-primary)'
-                                    }}
-                                >
-                                    <span className="text-lg">Auctions</span>
-                                </Link>
-                            </div>
-
-                            {/* Login/Logout Section */}
-                            <div className="pt-6 border-t" style={{ borderTopColor: 'var(--border-secondary)' }}>
-                                {isLoggedIn ? (
-                                    <div className="space-y-4">
-                                        <div className="px-4 py-4 rounded-lg text-center" style={{ background: 'var(--surface-hover)' }}>
-                                            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Logged in as:</p>
-                                            <p className="font-medium mt-2" style={{ color: 'var(--accent-primary)' }}>
-                                                <span className="text-lg">{user}</span>
-                                            </p>
-                                        </div>
-                                        <button
-                                            onClick={handleMobileLogout}
-                                            className="w-full px-4 py-4 rounded-lg font-medium transition-all duration-300 hover:shadow-md"
-                                            style={{
-                                                background: 'var(--accent-primary)',
-                                                color: 'var(--bg-primary)'
-                                            }}
-                                        >
-                                            <span className="text-lg">Logout</span>
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <Link
-                                        to="/login"
-                                        onClick={closeMobileMenu}
-                                        className="block w-full px-4 py-4 rounded-lg font-medium transition-all duration-300 hover:shadow-md text-center"
-                                        style={{
-                                            background: 'var(--accent-primary)',
-                                            color: 'var(--bg-primary)'
-                                        }}
-                                    >
-                                        <span className="text-lg">Login</span>
-                                    </Link>
-                                )}
-                            </div>
+                                {link.name}
+                            </Link>
+                        ))}
+                        <div className="px-3 pt-2">
+                            <input 
+                                type="text" 
+                                placeholder="Search auctions..." 
+                                className="w-full bg-muted/50 border-none rounded-lg py-2 px-4 text-sm"
+                            />
                         </div>
                     </div>
-                </>
+                </div>
             )}
         </nav>
     );
-};
-
-export default Navbar;
+}

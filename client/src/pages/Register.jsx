@@ -1,329 +1,173 @@
-import { useAuth } from '@/contexts/AuthContext';
-import { authAPI } from '@/utils/api';
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import validator from 'validator';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { motion } from 'framer-motion';
+import { Gavel, User, Mail, Lock, Loader2, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
+import { toast } from 'sonner';
 
-const Register = () => {
-    const { login } = useAuth()
-    const navigate = useNavigate();
-    const [formData, setFormData] = useState({
-        username: '',
-        email: '',
+export default function Register() {
+    const [userData, setUserData] = useState({ 
+        username: '', 
+        email: '', 
         password: '',
         confirmPassword: ''
     });
-    const [errors, setErrors] = useState({});
     const [isLoading, setIsLoading] = useState(false);
+    const { register } = useAuth();
+    const navigate = useNavigate();
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({
-            ...formData,
-            [name]: value
-        });
-
-        // Clear error for this field when user starts typing
-        if (errors[name]) {
-            setErrors({
-                ...errors,
-                [name]: ''
-            });
-        }
-    };
-
-    const validateForm = () => {
-        const newErrors = {};
-
-        // Username validation
-        if (!formData.username) {
-            newErrors.username = 'Username is required';
-        } else if (formData.username.length < 3) {
-            newErrors.username = 'Username must be at least 3 characters';
-        } else if (!validator.isAlphanumeric(formData.username.replace(/[_-]/g, ''))) {
-            newErrors.username = 'Username can only contain letters, numbers, hyphens and underscores';
-        }
-
-        // Email validation
-        if (!formData.email) {
-            newErrors.email = 'Email is required';
-        } else if (!validator.isEmail(formData.email)) {
-            newErrors.email = 'Please enter a valid email address';
-        }
-
-        // Password validation
-        if (!formData.password) {
-            newErrors.password = 'Password is required';
-        } else if (formData.password.length < 6) {
-            newErrors.password = 'Password must be at least 6 characters';
-        } else {
-            // Check if password has at least one letter (uppercase or lowercase) and one number
-            const hasLetter = /[a-zA-Z]/.test(formData.password);
-            const hasNumber = /[0-9]/.test(formData.password);
-
-            if (!hasLetter || !hasNumber) {
-                newErrors.password = 'Password must contain at least one letter and one number';
-            }
-        }
-
-        // Confirm password validation
-        if (!formData.confirmPassword) {
-            newErrors.confirmPassword = 'Please confirm your password';
-        } else if (formData.password !== formData.confirmPassword) {
-            newErrors.confirmPassword = 'Passwords do not match';
-        }
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+        setUserData({ ...userData, [e.target.name]: e.target.value });
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        // Validate form
-        if (!validateForm()) {
-            return;
+        
+        if (userData.password !== userData.confirmPassword) {
+            return toast.error('Passwords do not match');
         }
 
         setIsLoading(true);
-
         try {
-            const res = await authAPI.register(formData);
-
-            if (res.data.success) {
-                alert('Registration successful! Redirecting to auctions...');
-
-                // Clear form
-                setFormData({
-                    username: '',
-                    email: '',
-                    password: '',
-                    confirmPassword: ''
-                });
-                setErrors({});
-
-                // Login user (this handles localStorage automatically)
-                login(res.data.user.username);
-
-                // Redirect to auctions page
-                navigate('/auctions');
-            }
-
+            await register({
+                username: userData.username,
+                email: userData.email,
+                password: userData.password
+            });
+            toast.success('Account created!', {
+                description: 'Welcome to BidMaster Auctions.'
+            });
+            navigate('/');
         } catch (error) {
-            const errorMsg = error.response?.data?.msg || 'Registration failed';
-
-            alert(`Registration failed: ${errorMsg}`);
+            toast.error('Registration failed', {
+                description: error || 'An error occurred during registration.'
+            });
         } finally {
             setIsLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden" style={{
-            background: 'linear-gradient(135deg, #f8f6f0 0%, #f0ede5 30%, #e8e3d8 70%, #ddd6c7 100%)'
-        }}>
-            {/* Animated background elements */}
-            <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full blur-3xl animate-pulse" style={{
-                    background: 'rgba(210, 105, 30, 0.15)'
-                }}></div>
-                <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full blur-3xl animate-pulse delay-1000" style={{
-                    background: 'rgba(139, 125, 107, 0.15)'
-                }}></div>
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full blur-3xl animate-pulse delay-500" style={{
-                    background: 'rgba(205, 133, 63, 0.1)'
-                }}></div>
-            </div>
-
-            <div className="max-w-md w-full space-y-8 relative z-10">
-                {/* Header */}
-                <div className="text-center">
-                    <div className="mx-auto h-20 w-20 rounded-2xl flex items-center justify-center mb-6 shadow-2xl animate-bounce" style={{
-                        background: 'linear-gradient(135deg, #d2691e 0%, #b8541a 100%)',
-                        boxShadow: '0 8px 32px rgba(210, 105, 30, 0.4)'
-                    }}>
-                        <span className="text-3xl">🏛️</span>
-                    </div>
-                    <h2 className="text-4xl font-bold mb-2" style={{
-                        background: 'linear-gradient(135deg, #d2691e 0%, #8b7d6b 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text'
-                    }}>
-                        Create Account
-                    </h2>
-                    <p className="text-lg" style={{ color: '#8b7d6b' }}>
-                        Join AuctionHub to start bidding
-                    </p>
+        <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/5">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="w-full max-w-md"
+            >
+                <div className="text-center mb-8">
+                    <Link to="/" className="inline-flex items-center gap-2 mb-4 group">
+                        <div className="bg-primary p-3 rounded-2xl group-hover:rotate-12 transition-transform duration-300">
+                            <Gavel className="h-8 w-8 text-primary-foreground" />
+                        </div>
+                        <span className="text-3xl font-bold tracking-tighter">BidMaster</span>
+                    </Link>
+                    <h1 className="text-2xl font-bold">Create your account</h1>
+                    <p className="text-muted-foreground mt-2">Join thousands of bidders worldwide</p>
                 </div>
 
-                {/* Register Form Card */}
-                <div className="shadow-2xl border-0 rounded-2xl p-8" style={{
-                    background: 'rgba(248, 246, 240, 0.9)',
-                    backdropFilter: 'blur(20px)',
-                    border: '2px solid rgba(139, 125, 107, 0.3)',
-                    boxShadow: '0 8px 32px rgba(210, 105, 30, 0.2)'
-                }}>
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div>
-                            <label className="block text-sm font-medium mb-3 flex items-center gap-2" style={{ color: '#3a3530' }}>
-                                <span className="text-lg" style={{ color: '#d2691e' }}>👤</span>
-                                Username
-                            </label>
-                            <input
-                                type="text"
-                                name="username"
-                                value={formData.username}
-                                onChange={handleChange}
-                                className={`w-full px-4 py-3 rounded-xl h-12 focus:outline-none focus:ring-2 ${errors.username ? 'border-red-500 focus:border-red-500 focus:ring-red-500/50' : ''
-                                    }`}
-                                style={{
-                                    background: 'rgba(248, 246, 240, 0.8)',
-                                    border: '2px solid #8b7d6b',
-                                    color: '#3a3530'
-                                }}
-                                placeholder="Choose a username"
-                            />
-                            {errors.username && (
-                                <p className="text-red-500 text-sm mt-1 flex items-center gap-1 animate-pulse">
-                                    <span>⚠️</span>
-                                    {errors.username}
-                                </p>
-                            )}
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium mb-3 flex items-center gap-2" style={{ color: '#3a3530' }}>
-                                <span className="text-lg" style={{ color: '#d2691e' }}>📧</span>
-                                Email Address
-                            </label>
-                            <input
-                                type="email"
-                                name="email"
-                                value={formData.email}
-                                onChange={handleChange}
-                                className={`w-full px-4 py-3 rounded-xl h-12 focus:outline-none focus:ring-2 ${errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500/50' : ''
-                                    }`}
-                                style={{
-                                    background: 'rgba(248, 246, 240, 0.8)',
-                                    border: '2px solid #8b7d6b',
-                                    color: '#3a3530'
-                                }}
-                                placeholder="Enter your email"
-                            />
-                            {errors.email && (
-                                <p className="text-red-500 text-sm mt-1 flex items-center gap-1 animate-pulse">
-                                    <span>⚠️</span>
-                                    {errors.email}
-                                </p>
-                            )}
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium mb-3 flex items-center gap-2" style={{ color: '#3a3530' }}>
-                                <span className="text-lg" style={{ color: '#d2691e' }}>🔒</span>
-                                Password
-                            </label>
-                            <input
-                                type="password"
-                                name="password"
-                                value={formData.password}
-                                onChange={handleChange}
-                                className={`w-full px-4 py-3 rounded-xl h-12 focus:outline-none focus:ring-2 ${errors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500/50' : ''
-                                    }`}
-                                style={{
-                                    background: 'rgba(248, 246, 240, 0.8)',
-                                    border: '2px solid #8b7d6b',
-                                    color: '#3a3530'
-                                }}
-                                placeholder="Create a password"
-                            />
-                            {errors.password && (
-                                <p className="text-red-500 text-sm mt-1 flex items-center gap-1 animate-pulse">
-                                    <span>⚠️</span>
-                                    {errors.password}
-                                </p>
-                            )}
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium mb-3 flex items-center gap-2" style={{ color: '#3a3530' }}>
-                                <span className="text-lg" style={{ color: '#d2691e' }}>🔐</span>
-                                Confirm Password
-                            </label>
-                            <input
-                                type="password"
-                                name="confirmPassword"
-                                value={formData.confirmPassword}
-                                onChange={handleChange}
-                                className={`w-full px-4 py-3 rounded-xl h-12 focus:outline-none focus:ring-2 ${errors.confirmPassword ? 'border-red-500 focus:border-red-500 focus:ring-red-500/50' : ''
-                                    }`}
-                                style={{
-                                    background: 'rgba(248, 246, 240, 0.8)',
-                                    border: '2px solid #8b7d6b',
-                                    color: '#3a3530'
-                                }}
-                                placeholder="Confirm your password"
-                            />
-                            {errors.confirmPassword && (
-                                <p className="text-red-500 text-sm mt-1 flex items-center gap-1 animate-pulse">
-                                    <span>⚠️</span>
-                                    {errors.confirmPassword}
-                                </p>
-                            )}
-                        </div>
-
-                        <button
-                            type="submit"
-                            disabled={isLoading}
-                            className="w-full font-semibold py-3 rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                            style={{
-                                background: 'linear-gradient(135deg, #d2691e 0%, #b8541a 100%)',
-                                boxShadow: '0 4px 20px rgba(210, 105, 30, 0.4)',
-                                color: '#f8f6f0'
-                            }}
-                        >
-                            {isLoading ? (
-                                <div className="flex items-center justify-center">
-                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                                    Creating Account...
+                <Card className="border-none shadow-xl bg-card/50 backdrop-blur-sm">
+                    <CardHeader>
+                        <CardTitle>Sign Up</CardTitle>
+                        <CardDescription>Enter your details to get started</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="username">Username</Label>
+                                <div className="relative">
+                                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        id="username"
+                                        name="username"
+                                        placeholder="johndoe"
+                                        className="pl-10"
+                                        value={userData.username}
+                                        onChange={handleChange}
+                                        required
+                                    />
                                 </div>
-                            ) : (
-                                'Create Account'
-                            )}
-                        </button>
-                    </form>
-
-                    <div className="mt-6 text-center">
-                        <p style={{ color: '#8b7d6b' }}>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="email">Email Address</Label>
+                                <div className="relative">
+                                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        id="email"
+                                        name="email"
+                                        type="email"
+                                        placeholder="john@example.com"
+                                        className="pl-10"
+                                        value={userData.email}
+                                        onChange={handleChange}
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="password">Password</Label>
+                                    <div className="relative">
+                                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            id="password"
+                                            name="password"
+                                            type="password"
+                                            placeholder="••••••••"
+                                            className="pl-10"
+                                            value={userData.password}
+                                            onChange={handleChange}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="confirmPassword">Confirm</Label>
+                                    <div className="relative">
+                                        <ShieldCheck className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            id="confirmPassword"
+                                            name="confirmPassword"
+                                            type="password"
+                                            placeholder="••••••••"
+                                            className="pl-10"
+                                            value={userData.confirmPassword}
+                                            onChange={handleChange}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            <Button type="submit" className="w-full py-6 group" disabled={isLoading}>
+                                {isLoading ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                    <>
+                                        Create Account
+                                        <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                                    </>
+                                )}
+                            </Button>
+                        </form>
+                    </CardContent>
+                    <CardFooter className="flex flex-col space-y-4 border-t pt-6">
+                        <div className="text-sm text-center text-muted-foreground">
                             Already have an account?{' '}
-                            <Link to="/login" className="font-semibold transition-colors" style={{ color: '#d2691e' }}>
+                            <Link to="/login" className="text-primary font-semibold hover:underline">
                                 Sign in here
                             </Link>
-                        </p>
-                    </div>
-                </div>
-
-                {/* Trust Indicators */}
-                <div className="text-center">
-                    <div className="flex justify-center items-center space-x-6 text-sm" style={{ color: '#8b7d6b' }}>
-                        <div className="flex items-center">
-                            <span className="mr-2 text-lg" style={{ color: '#228b22' }}>🔒</span>
-                            SSL Secured
                         </div>
-                        <div className="flex items-center">
-                            <span className="mr-2 text-lg" style={{ color: '#4682b4' }}>🛡️</span>
-                            Privacy Protected
-                        </div>
-                        <div className="flex items-center">
-                            <span className="mr-2 text-lg" style={{ color: '#d2691e' }}>⚡</span>
-                            Fast & Reliable
-                        </div>
-                    </div>
-                </div>
-            </div>
+                    </CardFooter>
+                </Card>
+                
+                <p className="mt-8 text-center text-xs text-muted-foreground">
+                    By registering, you agree to our Terms of Service and Privacy Policy.
+                </p>
+            </motion.div>
         </div>
     );
-};
-
-export default Register;
+}

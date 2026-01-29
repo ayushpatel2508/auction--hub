@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { authAPI } from '../utils/api';
 
 export const AuthContext = createContext();
 
@@ -11,42 +12,11 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                // Check if user data is stored in localStorage
-                const storedUser = localStorage.getItem('currentUser');
-
-                if (storedUser) {
-                    // Verify token is still valid by making a test API call
-
-                    // Create timeout controller
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-
-                    try {
-                        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/auth/verify`, {
-                            method: 'GET',
-                            credentials: 'include', // Send cookies
-                            signal: controller.signal
-                        });
-                        clearTimeout(timeoutId);
-
-                        if (response.ok) {
-                            // Token is valid
-                            setUser(storedUser);
-                            setIsAuthenticated(true);
-                        } else {
-                            // Token expired or invalid
-                            localStorage.removeItem('currentUser');
-                            setUser(null);
-                            setIsAuthenticated(false);
-                        }
-                    } catch (error) {
-                        // API call failed, assume token expired
-                        localStorage.removeItem('currentUser');
-                        setUser(null);
-                        setIsAuthenticated(false);
-                    }
+                const response = await authAPI.status();
+                if (response.data.success) {
+                    setUser(response.data.user);
+                    setIsAuthenticated(true);
                 } else {
-                    // No user logged in
                     setUser(null);
                     setIsAuthenticated(false);
                 }
@@ -61,51 +31,58 @@ export const AuthProvider = ({ children }) => {
         checkAuth();
     }, []);
 
-    const login = (username = null) => {
-        // Store user data in localStorage
-        localStorage.setItem('currentUser', username);
+    const login = async (credentials) => {
+        try {
+            const response = await authAPI.login(credentials);
+            if (response.data.success) {
+                setUser(response.data.user);
+                setIsAuthenticated(true);
+                return response.data;
+            }
+        } catch (error) {
+            throw error.response?.data?.msg || 'Login failed';
+        }
+    };
 
-
-        setUser(username);
-        setIsAuthenticated(true);
+    const register = async (userData) => {
+        try {
+            const response = await authAPI.register(userData);
+            if (response.data.success) {
+                setUser(response.data.user);
+                setIsAuthenticated(true);
+                return response.data;
+            }
+        } catch (error) {
+            throw error.response?.data?.msg || 'Registration failed';
+        }
     };
 
     const logout = async () => {
         try {
-            // Call backend logout API to clear cookie
-            await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/auth/logout`, {
-                method: 'POST',
-                credentials: 'include', // Send cookies
-            });
+            await authAPI.logout();
         } catch (error) {
-            // Continue with frontend logout even if backend fails
+            console.error('Logout error:', error);
+        } finally {
+            setUser(null);
+            setIsAuthenticated(false);
         }
-
-        // Clear user data from localStorage
-        localStorage.removeItem('currentUser');
-
-        setUser(null);
-        setIsAuthenticated(false);
     };
-
-    if (loading) {
-        return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
-    }
 
     return (
         <AuthContext.Provider value={{
             user,
             isAuthenticated,
             login,
+            register,
             logout,
-            loading
+            loading,
+            setUser
         }}>
             {children}
         </AuthContext.Provider>
     );
 };
 
-// Custom hook to use auth context
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {

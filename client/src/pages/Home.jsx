@@ -1,406 +1,311 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { auctionAPI, userAPI } from '../utils/api';
-import { useNavigate } from 'react-router-dom';
-import CreateAuction from '../components/CreateAuction';
+import React, { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { 
+    Search, 
+    TrendingUp, 
+    Gavel, 
+    Clock, 
+    Users, 
+    ArrowRight,
+    Shield,
+    Zap,
+    Trophy
+} from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Badge } from '../components/ui/badge';
+import { auctionAPI } from '../utils/api';
+import { Link } from 'react-router-dom';
+import { formatDistanceToNow } from 'date-fns';
 
-const Home = () => {
-    const { user, isAuthenticated } = useAuth();
-    const navigate = useNavigate();
-    const [joinedAuctions, setJoinedAuctions] = useState([]);
-    const [createdAuctions, setCreatedAuctions] = useState([]);
+export default function Home() {
+    const [auctions, setAuctions] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [showAllJoined, setShowAllJoined] = useState(false);
-    const [showAllCreated, setShowAllCreated] = useState(false);
 
-    // Override body background for warm theme
     useEffect(() => {
-        const originalBackground = document.body.style.background;
-        document.body.style.background = 'var(--bg-primary)';
-
-        // Cleanup: restore original background when component unmounts
-        return () => {
-            document.body.style.background = originalBackground;
+        const fetchAuctions = async () => {
+            try {
+                const response = await auctionAPI.getAllAuctions();
+                if (response.data.success) {
+                    setAuctions(response.data.auctions.slice(0, 6)); // Show first 6 as featured
+                }
+            } catch (error) {
+                console.error('Error fetching auctions:', error);
+            } finally {
+                setLoading(false);
+            }
         };
+        fetchAuctions();
     }, []);
 
-    useEffect(() => {
-        if (isAuthenticated) {
-            fetchUserAuctions();
-        } else {
-            setLoading(false);
-        }
-    }, [isAuthenticated]); // Remove fetchUserAuctions from dependencies
-
-    const fetchUserAuctions = async () => {
-        try {
-            setLoading(true);
-
-            const [joinedRes, createdRes] = await Promise.all([
-                userAPI.getJoinedAuctions(),
-                userAPI.getMyAuctions()
-            ]);
-
-            // Sort by newest first (createdAt descending)
-            const sortedJoined = (joinedRes.data.auctions || []).sort((a, b) =>
-                new Date(b.createdAt) - new Date(a.createdAt)
-            );
-            const sortedCreated = (createdRes.data.auctions || []).sort((a, b) =>
-                new Date(b.createdAt) - new Date(a.createdAt)
-            );
-
-            setJoinedAuctions(sortedJoined);
-            setCreatedAuctions(sortedCreated);
-
-        } catch (error) {
-            // Error fetching user auctions
-        } finally {
-            setLoading(false);
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.1
+            }
         }
     };
 
-    const handleQuit = async (roomId) => {
-        try {
-            const ypos = window.scrollY
-
-            const res = await auctionAPI.quitAuction(roomId)
-
-            // Remove from local state instead of refetching (better UX)
-            setJoinedAuctions(prev => prev.filter(auction => auction.roomId !== roomId))
-
-            window.scrollTo(0, ypos)
-        }
-        catch (err) {
-            alert("Failed to quit auction")
-        }
-    }
-
-    const handleDelete = async (roomId) => {
-        try {
-            const ypos = window.scrollY
-
-            const res = await auctionAPI.endAuction(roomId)
-
-            // Remove from local state
-            setCreatedAuctions(prev => prev.filter(auction => auction.roomId !== roomId))
-
-            window.scrollTo(0, ypos)
-        }
-        catch (err) {
-            alert("Failed to delete auction")
-        }
-    }
-
-    const formatTimeLeft = (endTime) => {
-        const now = new Date();
-        const end = new Date(endTime);
-        const timeDiff = Math.max(0, Math.floor((end - now) / 1000));
-
-        if (timeDiff <= 0) return "Ended";
-
-        const hours = Math.floor(timeDiff / 3600);
-        const minutes = Math.floor((timeDiff % 3600) / 60);
-
-        if (hours > 0) {
-            return `${hours}h ${minutes}m left`;
-        } else if (minutes > 0) {
-            return `${minutes}m left`;
-        } else {
-            return `${timeDiff}s left`;
+    const itemVariants = {
+        hidden: { y: 20, opacity: 0 },
+        visible: {
+            y: 0,
+            opacity: 1
         }
     };
-
-
-
-    const AuctionCard = ({ auction, cardType = "joined" }) => (
-        <div className="card p-6 hover:transform hover:scale-[1.02] transition-all duration-300 rounded-xl border-2 backdrop-blur-sm">
-            <div className="flex items-start justify-between mb-4">
-                <h3 className="text-xl font-bold mb-2 line-clamp-1" style={{ color: 'var(--text-primary)' }}>{auction.title}</h3>
-                <div className={`px-3 py-1 rounded-full text-xs font-semibold ${auction.status === 'active'
-                    ? 'status-warning'
-                    : 'status-ended'
-                    } border-2`}>
-                    {auction.status === 'active' ? '🟢 Active' : '🔴 Ended'}
-                </div>
-            </div>
-
-            <p className="mb-6 line-clamp-2 text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                {auction.description || 'No description provided'}
-            </p>
-
-            <div className="space-y-4 mb-6">
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="rounded-lg p-3 border min-w-[100px] h-[80px] flex flex-col justify-center items-center" style={{ background: 'rgba(255, 255, 255, 0.8)', borderColor: 'var(--border-secondary)' }}>
-                        <p className="text-xs text-gray-500 mb-1">
-                            {auction.status === 'active' ? 'Current Bid' : 'Final Bid'}
-                        </p>
-                        <p className="text-lg font-bold" style={{ color: 'var(--success)' }}>${auction.currentBid}</p>
-                    </div>
-                    <div className="rounded-lg p-3 border min-w-[100px] h-[80px] flex flex-col justify-center items-center" style={{ background: 'rgba(255, 255, 255, 0.8)', borderColor: 'var(--border-secondary)' }}>
-                        <p className="text-xs text-gray-500 mb-1">Status</p>
-                        <p className={`text-sm font-medium ${auction.status === 'active' ? 'text-green-600' : 'text-red-500'}`}>
-                            {auction.status === 'active' ? formatTimeLeft(auction.endTime) : 'Ended'}
-                        </p>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                    {/* <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{
-                        background: 'var(--gradient-primary)'
-                    }}>
-                        {auction.createdBy.charAt(0).toUpperCase()}
-                    </div> */}
-                    <span className="text-sm text-black">Created by</span>
-                    <span className="text-sm text-gray-600 font-medium">{auction.createdBy}</span>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="pt-2">
-                    {cardType === "created" ? (
-                        // For created auctions
-                        auction.status === 'active' ? (
-                            <button
-                                onClick={() => handleDelete(auction.roomId)}
-                                className="btn btn-error w-full text-sm"
-                            >
-
-                                Delete Auction
-                            </button>
-                        ) : (
-                            <div className="rounded-lg p-3 text-center" style={{
-                                background: 'var(--accent-secondary)',
-                                border: '1px solid var(--border-primary)',
-                                borderRadius: '8px'
-                            }}>
-                                <span className="rounded-lg font-medium text-sm text-white">
-                                    {auction.winner ? ` Won by: ${auction.winner}` : ' No winner'}
-                                </span>
-                            </div>
-                        )
-                    ) : (
-                        // For joined auctions
-                        auction.status === 'active' ? (
-                            <button
-                                onClick={() => handleQuit(auction.roomId)}
-                                className="btn btn-warning w-full text-sm"
-                            >
-                                Quit Auction
-                            </button>
-                        ) : (
-                            <div className="rounded-lg p-3 text-center" style={{
-                                background: 'var(--accent-secondary)',
-                                border: '1px solid var(--border-primary)',
-                                borderRadius: '8px'
-                            }}>
-                                <span className="rounded-lg font-medium text-sm text-white">
-                                    {auction.winner === user ? '🏆 You Won!' :
-                                        auction.winner ? ` Won by: ${auction.winner}` :
-                                            ' Ended - No Winner'}
-                                </span>
-                            </div>
-                        )
-                    )}
-                </div>
-            </div>
-
-            <button
-                onClick={() => navigate(`/auction/${auction.roomId}`)}
-                className={`btn w-full ${auction.status === 'active' ? 'btn-primary' : ''}`}
-                style={auction.status !== 'active' ? { background: 'var(--accent-secondary)', color: 'white' } : {}}
-            >
-                {auction.status === 'active' ? 'View Auction' : 'View Results'}
-            </button>
-        </div>
-
-    );
-
-    if (!isAuthenticated) {
-        return (
-            <div style={{
-                background: 'var(--bg-primary)',
-                minHeight: '100vh',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-            }}>
-                <div className="card p-12 text-center max-w-lg mx-auto rounded-xl border-2 backdrop-blur-sm">
-                    <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-8" style={{
-                        background: 'var(--gradient-primary)',
-                        boxShadow: '0 3px 12px rgba(210, 105, 30, 0.4)'
-                    }}>
-                        <span className="text-4xl">🏛️</span>
-                    </div>
-                    <h1 className="text-4xl font-bold mb-6" style={{ color: 'var(--text-primary)' }}>
-                        Welcome to MyAuction
-                    </h1>
-                    <p className="text-xl mb-10 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                        Join the excitement of live bidding! Please log in to view your auctions and participate in real-time bidding.
-                    </p>
-                    <button
-                        onClick={() => navigate('/login')}
-                        className="btn btn-primary text-lg px-8 py-4 rounded-xl transition-all duration-300 font-medium transform hover:scale-105 flex items-center gap-2 mx-auto"
-                    >
-                        <span>🚀</span>
-                        Login to Continue
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
-    if (loading) {
-        return (
-            <div style={{
-                background: 'var(--bg-primary)',
-                minHeight: '100vh',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-            }}>
-                <div className="text-center">
-                    <div className="w-16 h-16 border-4 rounded-full animate-spin mx-auto mb-6" style={{
-                        borderColor: 'rgba(210, 105, 30, 0.3)',
-                        borderTopColor: 'var(--accent-primary)'
-                    }}></div>
-                    <p className="text-lg" style={{ color: 'var(--text-secondary)' }}>Loading your auctions...</p>
-                </div>
-            </div>
-        );
-    }
 
     return (
-        <div style={{
-            background: 'var(--bg-primary)',
-            minHeight: '100vh',
-            color: 'var(--text-primary)',
-            width: '100%'
-        }}>
-            <div className="container background: 'var(--bg-primary)', mx-auto px-6 py-12" style={{
-                background: 'transparent'
-            }}>
-                {/* Welcome Section */}
-                <div className="text-center mb-16">
-                    <div className="flex items-center justify-center gap-4 mb-6">
+        <div className="flex flex-col min-h-screen">
+            {/* Hero Section */}
+            <section className="relative overflow-hidden pt-20 pb-20 md:pt-32 md:pb-32 bg-gradient-to-b from-primary/5 via-background to-background">
+                <div className="container mx-auto px-4 relative z-10 text-center">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5 }}
+                        className="mb-6 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium"
+                    >
+                        <TrendingUp className="h-4 w-4" />
+                        <span>Real-time Bidding Floor is Open</span>
+                    </motion.div>
+                    
+                    <motion.h1 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1, duration: 0.5 }}
+                        className="text-5xl md:text-7xl font-extrabold tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70"
+                    >
+                        The Future of <br className="hidden md:block" />
+                        <span className="text-primary">Online Auctions</span> is Here
+                    </motion.h1>
+                    
+                    <motion.p 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2, duration: 0.5 }}
+                        className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto"
+                    >
+                        Experience the thrill of live bidding. Secure, fast, and transparent auctions for unique collectibles and premium assets.
+                    </motion.p>
+                    
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3, duration: 0.5 }}
+                        className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
+                    >
+                        <Link to="/auctions">
+                            <Button size="lg" className="px-8 py-7 text-lg rounded-2xl group">
+                                Start Bidding
+                                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                            </Button>
+                        </Link>
+                        <Link to="/create-auction">
+                            <Button size="lg" variant="outline" className="px-8 py-7 text-lg rounded-2xl">
+                                Become a Seller
+                            </Button>
+                        </Link>
+                    </motion.div>
 
-                        <div className="text-left">
-                            <h1 className="text-4xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                                Welcome back, <span className="text-gradient">{user}</span>!
-                            </h1>
-                            <p className="text-xl mt-2" style={{ color: 'var(--text-secondary)' }}>
-                                Manage your auctions and continue bidding
-                            </p>
+                    {/* Stats */}
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.5, duration: 1 }}
+                        className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto pt-10 border-t"
+                    >
+                        <div className="flex flex-col items-center">
+                            <span className="text-3xl font-bold">$12M+</span>
+                            <span className="text-sm text-muted-foreground uppercase tracking-wider">Total Volume</span>
                         </div>
-                    </div>
+                        <div className="flex flex-col items-center">
+                            <span className="text-3xl font-bold">50k+</span>
+                            <span className="text-sm text-muted-foreground uppercase tracking-wider">Active Users</span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <span className="text-3xl font-bold">150+</span>
+                            <span className="text-sm text-muted-foreground uppercase tracking-wider">Live Rooms</span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <span className="text-3xl font-bold">99.9%</span>
+                            <span className="text-sm text-muted-foreground uppercase tracking-wider">Secure Rate</span>
+                        </div>
+                    </motion.div>
                 </div>
 
-                {/* Joined Auctions Section */}
-                <div className="mb-16">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+                {/* Decorative background elements */}
+                <div className="absolute top-1/4 -left-20 w-64 h-64 bg-primary/10 rounded-full blur-3xl -z-0"></div>
+                <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-primary/10 rounded-full blur-3xl -z-0"></div>
+            </section>
+
+            {/* Featured Auctions */}
+            <section className="py-24 bg-background">
+                <div className="container mx-auto px-4">
+                    <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-4">
                         <div>
-                            <h2 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-                                Joined Auctions ({joinedAuctions.length})
-                            </h2>
-                            <p style={{ color: 'var(--text-secondary)' }}>Active auctions + past month results</p>
+                            <h2 className="text-3xl font-bold tracking-tight mb-4">Featured Auctions</h2>
+                            <p className="text-muted-foreground">Don't miss out on these highly anticipated items.</p>
                         </div>
-                        <button
-                            onClick={() => navigate('/auctions')}
-                            className="btn btn-secondary px-6 py-3 rounded-xl border-2 transition-all duration-300 font-medium hover:bg-orange-100 flex items-center gap-2"
-                        >
-                            Browse All Auctions
-                        </button>
+                        <Link to="/auctions">
+                            <Button variant="ghost" className="gap-2 group">
+                                View All 
+                                <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                            </Button>
+                        </Link>
                     </div>
 
-                    {joinedAuctions.length > 0 ? (
-                        <>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {joinedAuctions.slice(0, showAllJoined ? joinedAuctions.length : 5).map((auction) => (
-                                    <AuctionCard key={auction._id} auction={auction} cardType="joined" />
-                                ))}
-                            </div>
-
-                            {joinedAuctions.length > 5 && (
-                                <div className="text-center mt-8">
-                                    <button
-                                        onClick={() => setShowAllJoined(!showAllJoined)}
-                                        className="btn btn-ghost"
-                                    >
-                                        {showAllJoined ? 'Show Less' : `Show More (${joinedAuctions.length - 5} more)`}
-                                    </button>
+                    <motion.div 
+                        variants={containerVariants}
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true }}
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                    >
+                        {loading ? (
+                            Array(3).fill(0).map((_, i) => (
+                                <div key={i} className="rounded-3xl border bg-card p-4 space-y-4 animate-pulse">
+                                    <div className="aspect-square rounded-2xl bg-muted"></div>
+                                    <div className="h-6 w-2/3 bg-muted rounded"></div>
+                                    <div className="h-4 w-1/2 bg-muted rounded"></div>
+                                    <div className="flex justify-between pt-4">
+                                        <div className="h-8 w-24 bg-muted rounded-full"></div>
+                                        <div className="h-8 w-24 bg-muted rounded-full"></div>
+                                    </div>
                                 </div>
-                            )}
-                        </>
-                    ) : (
-                        <div className="card p-12 text-center rounded-xl border-2 backdrop-blur-sm">
-                            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 border" style={{
-                                background: 'var(--surface-hover)',
-                                borderColor: 'var(--border-secondary)'
-                            }}>
-                                <span className="text-3xl">🎯</span>
-                            </div>
-                            <h3 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>No Joined Auctions</h3>
-                            <p className="mb-8" style={{ color: 'var(--text-secondary)' }}>You haven't joined any auctions yet. Start bidding to see them here!</p>
-                            <button
-                                onClick={() => navigate('/auctions')}
-                                className="btn btn-primary px-6 py-3 rounded-xl transition-all duration-300 font-medium transform hover:scale-105 flex items-center gap-2 mx-auto"
-                            >
-                                Browse Auctions
-                            </button>
-                        </div>
-                    )}
+                            ))
+                        ) : (
+                            auctions.map((auction) => (
+                                <motion.div 
+                                    key={auction.roomId}
+                                    variants={itemVariants}
+                                    className="group relative rounded-3xl border bg-card hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5 overflow-hidden"
+                                >
+                                    <div className="aspect-[4/3] overflow-hidden relative">
+                                        <img 
+                                            src={auction.imageUrl ? (auction.imageUrl.startsWith('http') ? auction.imageUrl : `http://localhost:5000${auction.imageUrl}`) : 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=800&auto=format&fit=crop'} 
+                                            alt={auction.productName}
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                        />
+                                        <div className="absolute top-4 left-4 flex gap-2">
+                                            <Badge className="bg-background/80 backdrop-blur-md text-foreground border-none">
+                                                {auction.status === 'active' ? (
+                                                    <span className="flex items-center gap-1">
+                                                        <span className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                                                        Live
+                                                    </span>
+                                                ) : 'Ended'}
+                                            </Badge>
+                                        </div>
+                                        <div className="absolute bottom-4 right-4">
+                                            <div className="bg-black/60 backdrop-blur-md rounded-xl p-2 text-white text-xs font-medium flex items-center gap-2">
+                                                <Clock className="h-3 w-3" />
+                                                {auction.status === 'active' ? (
+                                                    <span>Ends in {formatDistanceToNow(new Date(auction.endTime))}</span>
+                                                ) : 'Expired'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="p-6">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <h3 className="text-xl font-bold truncate group-hover:text-primary transition-colors">{auction.productName}</h3>
+                                            <Badge variant="outline">{auction.createdBy}</Badge>
+                                        </div>
+                                        <p className="text-muted-foreground text-sm line-clamp-2 mb-6">
+                                            {auction.description || "No description available for this premium auction item."}
+                                        </p>
+                                        
+                                        <div className="flex items-center justify-between pt-4 border-t border-border/50">
+                                            <div>
+                                                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Current Bid</p>
+                                                <p className="text-2xl font-black text-primary">${auction.currentBid}</p>
+                                            </div>
+                                            <Link to={`/auction/${auction.roomId}`}>
+                                                <Button className="rounded-xl px-6 group">
+                                                    Bid Now
+                                                    <Gavel className="ml-2 h-4 w-4 group-hover:rotate-12 transition-transform" />
+                                                </Button>
+                                            </Link>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ))
+                        )}
+                    </motion.div>
                 </div>
+            </section>
 
-                {/* Created Auctions Section */}
-                <div>
-                    <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-                        <div>
-                            <h2 className="text-3xl font-bold  mb-2" style={{ color: 'var(--text-primary)' }}>
-                                Your Auctions ({createdAuctions.length})
-                            </h2>
-                            <p className="text-gray-400">Auctions you've created</p>
-                        </div>
-                        <CreateAuction onAuctionCreated={fetchUserAuctions}>
-                            <button className="btn btn-primary">
-                                Create New Auction
-                            </button>
-                        </CreateAuction>
+            {/* Features Section */}
+            <section className="py-24 bg-muted/30">
+                <div className="container mx-auto px-4">
+                    <div className="text-center max-w-3xl mx-auto mb-16">
+                        <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">Why BidMaster?</h2>
+                        <p className="text-lg text-muted-foreground">The most advanced features for a seamless auction experience.</p>
                     </div>
 
-                    {createdAuctions.length > 0 ? (
-                        <>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {createdAuctions.slice(0, showAllCreated ? createdAuctions.length : 5).map((auction) => (
-                                    <AuctionCard key={auction._id} auction={auction} cardType="created" />
-                                ))}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <Card className="p-8 border-none shadow-sm hover:shadow-md transition-shadow">
+                            <div className="bg-primary/10 w-12 h-12 rounded-2xl flex items-center justify-center mb-6">
+                                <Shield className="h-6 w-6 text-primary" />
                             </div>
-
-                            {createdAuctions.length > 5 && (
-                                <div className="text-center mt-8">
-                                    <button
-                                        onClick={() => setShowAllCreated(!showAllCreated)}
-                                        className="btn btn-ghost"
-                                    >
-                                        <span>{showAllCreated ? '📤' : '📥'}</span>
-                                        {showAllCreated ? 'Show Less' : `Show More (${createdAuctions.length - 5} more)`}
-                                    </button>
-                                </div>
-                            )}
-                        </>
-                    ) : (
-                        <div className="card p-12 text-center rounded-xl border-2 backdrop-blur-sm">
-
-                            <h3 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>No Created Auctions</h3>
-                            <p className="mb-8" style={{ color: 'var(--text-secondary)' }}>You haven't created any auctions yet. Start your first auction today!</p>
-                            <CreateAuction onAuctionCreated={fetchUserAuctions}>
-                                <button className="btn btn-primary px-6 py-3 rounded-xl transition-all duration-300 font-medium transform hover:scale-105 flex items-center gap-2 mx-auto">
-                                    Create Your First Auction
-                                </button>
-                            </CreateAuction>
-                        </div>
-                    )}
+                            <h3 className="text-xl font-bold mb-3">Secure Transactions</h3>
+                            <p className="text-muted-foreground">Every bid and transaction is protected with military-grade encryption and fraud detection.</p>
+                        </Card>
+                        <Card className="p-8 border-none shadow-sm hover:shadow-md transition-shadow">
+                            <div className="bg-primary/10 w-12 h-12 rounded-2xl flex items-center justify-center mb-6">
+                                <Zap className="h-6 w-6 text-primary" />
+                            </div>
+                            <h3 className="text-xl font-bold mb-3">Real-time Sockets</h3>
+                            <p className="text-muted-foreground">Never miss a bid with our high-speed WebSocket infrastructure that updates in milliseconds.</p>
+                        </Card>
+                        <Card className="p-8 border-none shadow-sm hover:shadow-md transition-shadow">
+                            <div className="bg-primary/10 w-12 h-12 rounded-2xl flex items-center justify-center mb-6">
+                                <Trophy className="h-6 w-6 text-primary" />
+                            </div>
+                            <h3 className="text-xl font-bold mb-3">Verified Sellers</h3>
+                            <p className="text-muted-foreground">Our rigorous verification process ensures that all items listed are authentic and as described.</p>
+                        </Card>
+                    </div>
                 </div>
-            </div>
+            </section>
+
+            {/* CTA Section */}
+            <section className="py-24 relative overflow-hidden">
+                <div className="container mx-auto px-4 relative z-10">
+                    <div className="bg-primary rounded-[3rem] p-12 md:p-24 text-center text-primary-foreground overflow-hidden relative">
+                        {/* Background pattern */}
+                        <div className="absolute inset-0 opacity-10 pointer-events-none">
+                            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_2px_2px,rgba(255,255,255,0.15)_1px,transparent_0)] bg-[size:40px_40px]"></div>
+                        </div>
+                        
+                        <h2 className="text-4xl md:text-5xl font-black mb-6 relative z-10">Ready to join the action?</h2>
+                        <p className="text-xl opacity-90 mb-12 max-w-2xl mx-auto relative z-10">Create your account today and start participating in exclusive auctions from around the world.</p>
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10">
+                            <Link to="/register">
+                                <Button size="lg" variant="secondary" className="px-10 py-7 text-lg rounded-2xl">
+                                    Create Free Account
+                                </Button>
+                            </Link>
+                            <Link to="/auctions">
+                                <Button size="lg" variant="ghost" className="px-10 py-7 text-lg rounded-2xl text-white hover:bg-white/10">
+                                    Browse Auctions
+                                </Button>
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </div>
     );
-};
+}
 
-export default Home;
+// Simple Card component if shadcn Card is missing
+function Card({ children, className }) {
+    return (
+        <div className={`bg-card rounded-3xl border p-6 ${className}`}>
+            {children}
+        </div>
+    );
+}
