@@ -67,6 +67,10 @@ const userSchema = new mongoose.Schema(
         leftAt: Date,
       },
     ],
+    // Watchlist (Array of auction roomIds)
+    watchlist: [{
+      type: String
+    }],
   },
   {
     timestamps: true,

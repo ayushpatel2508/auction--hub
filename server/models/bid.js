@@ -26,7 +26,8 @@ const bidSchema = new mongoose.Schema({
   },
   socketId: {
     type: String,
-    required: true,
+    required: false, // Make optional for HTTP requests
+    default: null,
   },
 }, {
   timestamps: true,

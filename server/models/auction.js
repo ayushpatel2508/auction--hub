@@ -22,6 +22,10 @@ const auctionSchema = new mongoose.Schema({
       type: String,
       default: null,
     },
+    cloudinaryPublicId: {
+      type: String,
+      default: null,
+    },
     description: {
     type: String,
     trim: true,

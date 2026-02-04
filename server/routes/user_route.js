@@ -25,6 +25,61 @@ router.get("/profile", isLoggedIn, async (req, res) => {
   }
 });
 
+// GET /api/users/watchlist - Get user's watchlist
+router.get("/users/watchlist", isLoggedIn, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ success: false, msg: "User not found" });
+    }
+
+    // Find all auctions that are in the user's watchlist
+    const auctions = await Auction.find({ roomId: { $in: user.watchlist } });
+
+    res.json({ success: true, auctions });
+  } catch (err) {
+    console.error("Error fetching watchlist:", err);
+    res.status(500).json({ success: false, msg: "Error fetching watchlist" });
+  }
+});
+
+// POST /api/users/watchlist/:roomId - Toggle watchlist item
+router.post("/users/watchlist/:roomId", isLoggedIn, async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ success: false, msg: "User not found" });
+    }
+
+    // Initialize watchlist if it doesn't exist (migration for old users)
+    if (!user.watchlist) {
+      user.watchlist = [];
+    }
+
+    const index = user.watchlist.indexOf(roomId);
+    let isAdded = false;
+
+    if (index === -1) {
+      // Add to watchlist
+      user.watchlist.push(roomId);
+      isAdded = true;
+    } else {
+      // Remove from watchlist
+      user.watchlist.splice(index, 1);
+      isAdded = false;
+    }
+
+    await user.save();
+
+    res.json({ success: true, isAdded, watchlist: user.watchlist });
+  } catch (err) {
+    console.error("Error toggling watchlist:", err);
+    res.status(500).json({ success: false, msg: "Error updating watchlist" });
+  }
+});
+
 // GET /api/users/my-auctions - Get user's created auctions
 router.get("/users/my-auctions", isLoggedIn, async (req, res) => {
   try {

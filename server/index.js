@@ -62,6 +62,7 @@ const io = new Server(server, {
   cors: {
     origin: process.env.SOCKET_CORS_ORIGIN?.split(",") || [
       "http://localhost:5173",
+      "http://localhost:3001",
     ],
     methods: ["GET", "POST"],
     credentials: true,
@@ -382,6 +383,6 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(process.env.PORT || 6000, () => {
+server.listen(process.env.PORT || 5000, () => {
   console.log(`Server is running on port ${process.env.PORT || 5000}`);
 });

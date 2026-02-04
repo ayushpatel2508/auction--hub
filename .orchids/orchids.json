@@ -1,8 +1,0 @@
-{
-  "projectId": "ed54556b-e224-41a2-9689-fb1976c18b26",
-  "createdAt": 1769693700727,
-  "startupCommands": [
-    "cd server && bun install && bun run dev",
-    "cd client && bun install && bun run dev"
-  ]
-}

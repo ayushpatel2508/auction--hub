@@ -5,7 +5,7 @@ import { Bid } from "../models/bid.js";
 import { Presence } from "../models/presence.js";
 import { isLoggedIn } from "../middleware/isloggedIn.js";
 import { isAdmin } from "../middleware/isAdmin.js";
-import { upload } from "../middleware/upload.js";
+import { upload, uploadToCloudinary, deleteFromCloudinary } from "../middleware/cloudinaryUpload.js";
 
 // Export a function that accepts io instance
 export default function(io) {
@@ -24,10 +24,24 @@ router.post("/auction/create", isLoggedIn, upload.single("image"), async (req, r
       });
     }
 
-    // Handle image upload
+    // Handle image upload to Cloudinary
     let imageUrl = null;
+    let cloudinaryPublicId = null;
+    
     if (req.file) {
-      imageUrl = `/uploads/${req.file.filename}`;
+      try {
+        const result = await uploadToCloudinary(req.file.buffer, {
+          public_id: `auction_${req.user.username}_${Date.now()}`,
+        });
+        imageUrl = result.secure_url;
+        cloudinaryPublicId = result.public_id;
+      } catch (uploadError) {
+        console.error('Cloudinary upload error:', uploadError);
+        return res.status(500).json({
+          success: false,
+          msg: "Failed to upload image. Please try again.",
+        });
+      }
     }
 
     // Generate roomId
@@ -46,6 +60,7 @@ router.post("/auction/create", isLoggedIn, upload.single("image"), async (req, r
       title,
       productName,
       imageUrl,
+      cloudinaryPublicId,
       description: description || "",
       startingPrice: Number(startingPrice),
       currentBid: Number(startingPrice),
@@ -252,6 +267,16 @@ router.delete("/auction/:roomId", isLoggedIn, async (req, res) => {
       });
     }
 
+    // Delete image from Cloudinary if it exists
+    if (auction.cloudinaryPublicId) {
+      try {
+        await deleteFromCloudinary(auction.cloudinaryPublicId);
+      } catch (cloudinaryError) {
+        console.error('Error deleting image from Cloudinary:', cloudinaryError);
+        // Continue with auction deletion even if image deletion fails
+      }
+    }
+
     // Get final auction stats before deletion
     const finalStats = {
       title: auction.title,
@@ -332,6 +357,114 @@ const userJoinedAuctions = allAuctionsNotCreated.filter(auction =>
     });
   }
 });
+// PLACE BID (HTTP)
+router.post("/auction/:roomId/bid", isLoggedIn, async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const { amount } = req.body;
+    const username = req.user.username;
+
+    if (!amount) {
+      return res.status(400).json({
+        success: false,
+        msg: "Bid amount is required",
+      });
+    }
+
+    // Check if user exists
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        msg: "User not found",
+      });
+    }
+
+    const auction = await Auction.findOne({ roomId });
+
+    if (!auction) {
+      return res.status(404).json({
+        success: false,
+        msg: "Auction not found",
+      });
+    }
+
+    if (auction.status === "ended") {
+      return res.status(400).json({
+        success: false,
+        msg: "Auction has ended",
+      });
+    }
+
+    if (amount <= auction.currentBid) {
+      return res.status(400).json({
+        success: false,
+        msg: "Bid must be higher than current bid",
+      });
+    }
+
+    // Check if the user is trying to bid consecutively
+    if (auction.highestBidder === username) {
+      return res.status(400).json({
+        success: false,
+        msg: "You cannot place consecutive bids. Wait for another user to bid first.",
+      });
+    }
+
+    // Update auction
+    auction.currentBid = amount;
+    auction.highestBidder = username;
+    await auction.save();
+
+    // Mark previous bids as not winning
+    await Bid.updateMany({ roomId: roomId }, { isWinning: false });
+
+    // Save bid to DB
+    const newBid = await Bid.create({
+      username: username,
+      roomId: roomId,
+      amount: amount,
+      isWinning: true,
+      socketId: 'http-request', // Mark as HTTP request
+    });
+
+    // Broadcast to all users in room via Socket.IO
+    const bidUpdateData = {
+      username: username,
+      roomId: roomId,
+      amount: amount,
+      isWinning: true,
+      placedAt: newBid.placedAt
+    };
+
+    // Emit both events for compatibility
+    io.to(roomId).emit("bid-placed", bidUpdateData);
+    io.to(roomId).emit("bid-update", {
+      highestBid: amount,
+      highestBidder: username,
+      roomId: roomId
+    });
+
+    res.json({
+      success: true,
+      msg: "Bid placed successfully",
+      bid: bidUpdateData,
+      auction: {
+        roomId: auction.roomId,
+        currentBid: auction.currentBid,
+        highestBidder: auction.highestBidder
+      }
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      msg: "Failed to place bid",
+      error: err.message,
+    });
+  }
+});
+
 // END AUCTION MANUALLY (Admin/Creator)
 router.post("/auction/:roomId/end", isLoggedIn, async (req, res) => {
   try {
