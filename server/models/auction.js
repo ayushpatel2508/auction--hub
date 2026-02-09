@@ -31,6 +31,23 @@ const auctionSchema = new mongoose.Schema({
     trim: true,
     maxlength: 500,
   },
+  category: {
+    type: String,
+    required: false,
+    default: 'Other',
+    enum: [
+      'Electronics',
+      'Fashion', 
+      'Home & Garden',
+      'Sports',
+      'Collectibles',
+      'Art',
+      'Books',
+      'Jewelry',
+      'Automotive',
+      'Other'
+    ]
+  },
   startingPrice: {
     type: Number,
     required: true,
@@ -90,5 +107,7 @@ const auctionSchema = new mongoose.Schema({
 auctionSchema.index({ createdBy: 1 });
 auctionSchema.index({ status: 1, endTime: 1 });
 auctionSchema.index({ status: 1, createdAt: -1 }); // For listing active auctions by creation date
+auctionSchema.index({ category: 1 }); // For category filtering
+auctionSchema.index({ currentBid: 1 }); // For price filtering
 
 export const Auction = mongoose.model("Auction", auctionSchema);

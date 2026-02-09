@@ -119,10 +119,12 @@ router.get("/users/joined-auctions", isLoggedIn, async (req, res) => {
   }
 });
 
-// GET /api/users/my-bids - Get user's bid history
+// GET /api/users/my-bids - Get user's bid history (latest 10)
 router.get("/users/my-bids", isLoggedIn, async (req, res) => {
   try {
-    const bids = await Bid.find({ username: req.user.username });
+    const bids = await Bid.find({ username: req.user.username })
+      .sort({ placedAt: -1 })
+      .limit(10);
 
     res.json({ success: true, bids });
 
@@ -172,6 +174,23 @@ router.put("/admin/users/:id/role", isLoggedIn, isAdmin, async (req, res) => {
 
   } catch (err) {
     res.status(500).json({ success: false, msg: "Error updating role" });
+  }
+});
+
+// GET /api/public/stats - Get public system stats (for home page)
+router.get("/public/stats", async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments();
+    const totalAuctions = await Auction.countDocuments();
+    const totalBids = await Bid.countDocuments();
+
+    res.json({
+      success: true,
+      stats: { totalUsers, totalAuctions, totalBids }
+    });
+
+  } catch (err) {
+    res.status(500).json({ success: false, msg: "Error fetching stats" });
   }
 });
 

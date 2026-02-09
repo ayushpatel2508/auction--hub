@@ -14,7 +14,7 @@ export default function(io) {
 // CREATE AUCTION
 router.post("/auction/create", isLoggedIn, upload.single("image"), async (req, res) => {
   try {
-    const { title, productName, description, startingPrice, duration } = req.body;
+    const { title, productName, description, startingPrice, duration, category } = req.body;
 
     // Validate required fields
     if (!title || !productName || !startingPrice || !duration) {
@@ -62,6 +62,7 @@ router.post("/auction/create", isLoggedIn, upload.single("image"), async (req, r
       imageUrl,
       cloudinaryPublicId,
       description: description || "",
+      category: category || "Other",
       startingPrice: Number(startingPrice),
       currentBid: Number(startingPrice),
       duration: Number(duration),
@@ -85,24 +86,58 @@ router.post("/auction/create", isLoggedIn, upload.single("image"), async (req, r
   }
 });
 
-// GET ALL AUCTIONS
+// GET ALL AUCTIONS - SIMPLIFIED VERSION
 router.get("/auctions", async (req, res) => {
   try {
-    // Fetch both active and ended auctions
-    const auctions = await Auction.find({ 
-      status: { $in: ["active", "ended"] } 
-    }).sort({
-      createdAt: -1,
+    // Get all auctions first
+    const allAuctions = await Auction.find({}).sort({ createdAt: -1 });
+    
+    // Get query parameters
+    const category = req.query.category;
+    const status = req.query.status;
+    const search = req.query.search;
+    
+    // Start with all auctions
+    let filteredAuctions = allAuctions;
+    
+    // Filter by category if specified
+    if (category && category !== 'all') {
+      filteredAuctions = filteredAuctions.filter(auction => {
+        return auction.category === category;
+      });
+    }
+    
+    // Filter by status if specified
+    if (status && status !== 'all') {
+      filteredAuctions = filteredAuctions.filter(auction => {
+        return auction.status === status;
+      });
+    }
+    
+    // Filter by search if specified
+    if (search) {
+      filteredAuctions = filteredAuctions.filter(auction => {
+        const searchLower = search.toLowerCase();
+        const titleMatch = auction.title.toLowerCase().includes(searchLower);
+        const productMatch = auction.productName.toLowerCase().includes(searchLower);
+        const descMatch = auction.description ? auction.description.toLowerCase().includes(searchLower) : false;
+        return titleMatch || productMatch || descMatch;
+      });
+    }
+    
+    // Convert to response format
+    const responseAuctions = filteredAuctions.map(auction => {
+      return {
+        ...auction.toObject(),
+        timeRemaining: auction.endTime - Date.now(),
+        isActive: auction.status === "active",
+      };
     });
 
     res.json({
       success: true,
-      totalAuctions: auctions.length,
-      auctions: auctions.map((auction) => ({
-        ...auction.toObject(),
-        timeRemaining: auction.endTime - Date.now(),
-        isActive: auction.status === "active",
-      })),
+      totalAuctions: responseAuctions.length,
+      auctions: responseAuctions,
     });
   } catch (err) {
     res.status(500).json({
