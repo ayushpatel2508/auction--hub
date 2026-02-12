@@ -281,10 +281,12 @@ const AuctionDetail = () => {
                         <Heart className={`h-4 w-4 mr-2 ${isWatched ? 'fill-red-500 text-red-500' : ''}`} />
                         {isWatched ? 'Watching' : 'Watch'}
                     </Button>
-                    <Button variant="outline" size="sm" onClick={handleShare}>
-                        <Share2 className="h-4 w-4 mr-2" />
-                        Share
-                    </Button>
+                    {auction.status !== 'ended' && (
+                        <Button variant="outline" size="sm" onClick={handleShare}>
+                            <Share2 className="h-4 w-4 mr-2" />
+                            Share
+                        </Button>
+                    )}
                 </div>
             </div>
 
@@ -317,7 +319,7 @@ const AuctionDetail = () => {
                             </div>
 
                             {/* Online Users */}
-                            {onlineUsers.length > 0 && (
+                            {auction.status !== 'ended' && onlineUsers.length > 0 && (
                                 <div className="absolute top-4 right-4 flex items-center space-x-1 bg-background/90 rounded-full px-3 py-1">
                                     <Eye className="h-4 w-4" />
                                     <span className="text-sm font-medium">{onlineUsers.length}</span>
@@ -414,13 +416,14 @@ const AuctionDetail = () => {
                         bids={bidHistory}
                         currentUser={user}
                         highestBidder={auction.highestBidder}
+                        auctionStatus={auction.status}
                     />
 
                     {/* Test Component - Remove this in production */}
                     <BidTest roomId={roomId} />
 
                     {/* Online Users */}
-                    {onlineUsers.length > 0 && (
+                    {auction.status !== 'ended' && onlineUsers.length > 0 && (
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center space-x-2">

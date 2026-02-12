@@ -50,6 +50,8 @@ const Login = () => {
             newErrors.password = 'Password is required'
         } else if (formData.password.length < 6) {
             newErrors.password = 'Password must be at least 6 characters'
+        } else if (formData.password.length > 25) {
+            newErrors.password = 'Password must not exceed 25 characters'
         }
 
         setErrors(newErrors)
@@ -146,6 +148,7 @@ const Login = () => {
                                         onChange={handleChange}
                                         className={`pl-10 pr-10 ${errors.password ? 'border-red-500' : ''}`}
                                         disabled={loading}
+                                        maxLength={25}
                                     />
                                     <button
                                         type="button"

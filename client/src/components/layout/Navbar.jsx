@@ -13,10 +13,8 @@ import {
     Plus,
     User,
     LogOut,
-    Bell,
     Heart,
     Trophy,
-    MessageCircle,
     TrendingUp,
     Star,
     ChevronDown
@@ -49,7 +47,6 @@ const Navbar = () => {
         { path: '/dashboard', label: 'Dashboard', icon: User },
         { path: '/watchlist', label: 'Watchlist', icon: Heart },
         { path: '/won-auctions', label: 'Won Auctions', icon: Trophy },
-        { path: '/messages', label: 'Messages', icon: MessageCircle },
     ] : []
 
     return (
@@ -88,14 +85,6 @@ const Navbar = () => {
                     <div className="hidden md:flex items-center space-x-4">
                         {isAuthenticated ? (
                             <>
-                                {/* Notifications */}
-                                <Button variant="ghost" size="sm">
-                                    <Bell className="h-4 w-4" />
-                                    <Badge variant="destructive" className="ml-1 h-2 w-2 p-0">
-                                        <span className="sr-only">3 notifications</span>
-                                    </Badge>
-                                </Button>
-
                                 {/* Create Auction */}
                                 <Button variant="outline" size="sm" asChild>
                                     <Link to="/create-auction">

@@ -5,7 +5,7 @@ import { Badge } from '../ui/badge'
 import { formatCurrency, formatRelativeTime, getInitials } from '../../lib/utils'
 import { TrendingUp, Crown } from 'lucide-react'
 
-const BidHistory = ({ bids = [], currentUser, highestBidder }) => {
+const BidHistory = ({ bids = [], currentUser, highestBidder, auctionStatus }) => {
     if (!bids.length) {
         return (
             <Card>
@@ -42,10 +42,10 @@ const BidHistory = ({ bids = [], currentUser, highestBidder }) => {
                         <div
                             key={`${bid.username}-${bid.amount}-${bid.placedAt}`}
                             className={`flex items-center justify-between p-3 rounded-lg border ${isWinning
-                                    ? 'bg-green-50 border-green-200'
-                                    : isCurrentUser
-                                        ? 'bg-blue-50 border-blue-200'
-                                        : 'bg-muted/50'
+                                ? 'bg-green-50 border-green-200'
+                                : isCurrentUser
+                                    ? 'bg-blue-50 border-blue-200'
+                                    : 'bg-muted/50'
                                 }`}
                         >
                             <div className="flex items-center space-x-3">
@@ -70,7 +70,7 @@ const BidHistory = ({ bids = [], currentUser, highestBidder }) => {
                                         </span>
                                         {isWinning && (
                                             <Badge variant="success" className="text-xs">
-                                                Winning
+                                                {auctionStatus === 'ended' ? 'Winner' : 'Winning'}
                                             </Badge>
                                         )}
                                     </div>
@@ -82,10 +82,10 @@ const BidHistory = ({ bids = [], currentUser, highestBidder }) => {
 
                             <div className="text-right">
                                 <p className={`font-bold ${isWinning
-                                        ? 'text-green-700'
-                                        : isCurrentUser
-                                            ? 'text-blue-700'
-                                            : 'text-foreground'
+                                    ? 'text-green-700'
+                                    : isCurrentUser
+                                        ? 'text-blue-700'
+                                        : 'text-foreground'
                                     }`}>
                                     {formatCurrency(bid.amount)}
                                 </p>

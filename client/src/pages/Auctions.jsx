@@ -14,11 +14,7 @@ import {
     Search,
     Filter,
     SlidersHorizontal,
-    Grid3X3,
-    List,
-    Gavel,
-    Clock,
-    TrendingUp
+    Gavel
 } from 'lucide-react'
 
 const Auctions = () => {
@@ -31,7 +27,6 @@ const Auctions = () => {
     const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '')
     const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'all')
     const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'newest')
-    const [viewMode, setViewMode] = useState('grid')
     const [watchlist, setWatchlist] = useState([])
     const [filters, setFilters] = useState({
         status: searchParams.get('status') || 'all',
@@ -221,30 +216,11 @@ const Auctions = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold">Auctions</h1>
-                    <p className="text-muted-foreground">
-                        Discover amazing deals and bid on incredible items
-                    </p>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                    <Button
-                        variant={viewMode === 'grid' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setViewMode('grid')}
-                    >
-                        <Grid3X3 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                        variant={viewMode === 'list' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setViewMode('list')}
-                    >
-                        <List className="h-4 w-4" />
-                    </Button>
-                </div>
+            <div>
+                <h1 className="text-3xl font-bold">Auctions</h1>
+                <p className="text-muted-foreground">
+                    Discover amazing deals and bid on incredible items
+                </p>
             </div>
 
             {/* Search and Filters */}
@@ -344,27 +320,13 @@ const Auctions = () => {
             </Card>
 
             {/* Results */}
-            <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
-                    {loading ? 'Loading...' : `${filteredAuctions.length} auctions found`}
-                </p>
-
-                {/* Quick Stats */}
-                <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                    <div className="flex items-center space-x-1">
-                        <Clock className="h-4 w-4" />
-                        <span>{filteredAuctions.filter(a => a.status === 'active').length} Active</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                        <TrendingUp className="h-4 w-4" />
-                        <span>{filteredAuctions.filter(a => new Date(a.endTime) - new Date() < 24 * 60 * 60 * 1000).length} Ending Soon</span>
-                    </div>
-                </div>
-            </div>
+            <p className="text-sm text-muted-foreground">
+                {loading ? 'Loading...' : `${filteredAuctions.length} auctions found`}
+            </p>
 
             {/* Auctions Grid */}
             {loading ? (
-                <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
+                <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                     {[...Array(6)].map((_, i) => (
                         <Card key={i} className="animate-pulse">
                             <div className="aspect-video bg-muted"></div>
@@ -377,7 +339,7 @@ const Auctions = () => {
                     ))}
                 </div>
             ) : filteredAuctions.length > 0 ? (
-                <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
+                <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                     {filteredAuctions.map((auction) => (
                         <AuctionCard
                             key={auction.roomId}

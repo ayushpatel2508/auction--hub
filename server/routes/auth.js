@@ -35,6 +35,13 @@ router.post("/register", async (req, res) => {
       });
     }
 
+    if (password.length > 25) {
+      return res.status(400).json({
+        success: false,
+        msg: "Password must not exceed 25 characters",
+      });
+    }
+
     const exists = await User.findOne({ email });
     if (exists) {
       return res.status(400).json({

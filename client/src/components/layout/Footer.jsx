@@ -4,20 +4,14 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import {
     Gavel,
-    Mail,
-    Phone,
-    MapPin,
     Facebook,
     Twitter,
     Instagram,
     Linkedin,
     Github,
     Heart,
-    Shield,
     Zap,
-    Users,
-    ArrowRight,
-    Send
+    Users
 } from 'lucide-react'
 
 const Footer = () => {
@@ -74,7 +68,6 @@ const Footer = () => {
     ]
 
     const features = [
-        { icon: Shield, text: 'Secure Transactions' },
         { icon: Zap, text: 'Real-time Bidding' },
         { icon: Users, text: 'Trusted Community' },
     ]
@@ -111,23 +104,6 @@ const Footer = () => {
                                     )
                                 })}
                             </div>
-
-                            {/* Newsletter Signup */}
-                            <div className="space-y-2">
-                                <h4 className="font-semibold">Stay Updated</h4>
-                                <div className="flex space-x-2">
-                                    <Input
-                                        placeholder="Enter your email"
-                                        className="flex-1"
-                                    />
-                                    <Button size="sm">
-                                        <Send className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                                <p className="text-xs text-muted-foreground">
-                                    Get notified about new auctions and exclusive deals
-                                </p>
-                            </div>
                         </div>
 
                         {/* Footer Links */}
@@ -148,41 +124,6 @@ const Footer = () => {
                                 </ul>
                             </div>
                         ))}
-                    </div>
-                </div>
-
-                {/* Contact Information */}
-                <div className="py-8 border-t">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="flex items-center space-x-3">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                                <Mail className="h-5 w-5 text-primary" />
-                            </div>
-                            <div>
-                                <p className="font-medium">Email Us</p>
-                                <p className="text-sm text-muted-foreground">support@auctionhub.com</p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center space-x-3">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                                <Phone className="h-5 w-5 text-primary" />
-                            </div>
-                            <div>
-                                <p className="font-medium">Call Us</p>
-                                <p className="text-sm text-muted-foreground">+1 (555) 123-4567</p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center space-x-3">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                                <MapPin className="h-5 w-5 text-primary" />
-                            </div>
-                            <div>
-                                <p className="font-medium">Visit Us</p>
-                                <p className="text-sm text-muted-foreground">123 Auction St, NY 10001</p>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
@@ -226,20 +167,6 @@ const Footer = () => {
                                     )
                                 })}
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Trust Indicators */}
-                <div className="py-6 border-t bg-muted/50 -mx-4 px-4">
-                    <div className="text-center space-y-2">
-                        <p className="text-sm font-medium">Trusted by over 1 million users worldwide</p>
-                        <div className="flex items-center justify-center space-x-8 text-xs text-muted-foreground">
-                            <span>🔒 SSL Secured</span>
-                            <span>✅ Verified Sellers</span>
-                            <span>💳 Secure Payments</span>
-                            <span>📞 24/7 Support</span>
-                            <span>🛡️ Buyer Protection</span>
                         </div>
                     </div>
                 </div>
