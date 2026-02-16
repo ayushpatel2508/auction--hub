@@ -4,7 +4,6 @@ import { User } from "../models/user.js";
 import { Bid } from "../models/bid.js";
 import { Presence } from "../models/presence.js";
 import { isLoggedIn } from "../middleware/isloggedIn.js";
-import { isAdmin } from "../middleware/isAdmin.js";
 import { upload, uploadToCloudinary, deleteFromCloudinary } from "../middleware/cloudinaryUpload.js";
 
 // Export a function that accepts io instance
@@ -415,6 +414,7 @@ router.post("/auction/:roomId/bid", isLoggedIn, async (req, res) => {
       });
     }
 
+    // Get current auction state
     const auction = await Auction.findOne({ roomId });
 
     if (!auction) {
@@ -446,10 +446,34 @@ router.post("/auction/:roomId/bid", isLoggedIn, async (req, res) => {
       });
     }
 
-    // Update auction
-    auction.currentBid = amount;
-    auction.highestBidder = username;
-    await auction.save();
+    // ✅ ATOMIC UPDATE - Prevents race conditions!
+    // Only update if currentBid hasn't changed since we read it
+    const updatedAuction = await Auction.findOneAndUpdate(
+      {
+        roomId: roomId,
+        currentBid: auction.currentBid, // ← Only update if this is still the current bid
+        status: "active" // ← Ensure auction is still active
+      },
+      {
+        $set: {
+          currentBid: amount,
+          highestBidder: username
+        }
+      },
+      {
+        new: true, // Return updated document
+        runValidators: true
+      }
+    );
+
+    // If update failed, someone else bid in the meantime
+    if (!updatedAuction) {
+      return res.status(409).json({
+        success: false,
+        msg: "Bid conflict - another bid was placed. Please try again with a higher amount.",
+        currentBid: (await Auction.findOne({ roomId }))?.currentBid
+      });
+    }
 
     // Mark previous bids as not winning
     await Bid.updateMany({ roomId: roomId }, { isWinning: false });
@@ -485,9 +509,9 @@ router.post("/auction/:roomId/bid", isLoggedIn, async (req, res) => {
       msg: "Bid placed successfully",
       bid: bidUpdateData,
       auction: {
-        roomId: auction.roomId,
-        currentBid: auction.currentBid,
-        highestBidder: auction.highestBidder
+        roomId: updatedAuction.roomId,
+        currentBid: updatedAuction.currentBid,
+        highestBidder: updatedAuction.highestBidder
       }
     });
 

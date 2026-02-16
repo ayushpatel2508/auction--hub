@@ -3,7 +3,6 @@ import { User } from "../models/user.js";
 import { Auction } from "../models/auction.js";
 import { Bid } from "../models/bid.js";
 import { isLoggedIn } from "../middleware/isloggedIn.js";
-import { isAdmin } from "../middleware/isAdmin.js";
 
 const router = express.Router();
 
@@ -145,57 +144,8 @@ router.get("/users/won-auctions", isLoggedIn, async (req, res) => {
   }
 });
 
-// ========== ADMIN ROUTES ==========
-
-// GET /api/admin/users - List all users
-router.get("/admin/users", isLoggedIn, isAdmin, async (req, res) => {
-  try {
-    const users = await User.find().select('-password');
-
-    res.json({ success: true, users });
-
-  } catch (err) {
-    res.status(500).json({ success: false, msg: "Error fetching users" });
-  }
-});
-
-// PUT /api/admin/users/:id/role - Update user role
-router.put("/admin/users/:id/role", isLoggedIn, isAdmin, async (req, res) => {
-  try {
-    const { role } = req.body;
-
-    const user = await User.findByIdAndUpdate(req.params.id, { role }, { new: true }).select('-password');
-
-    if (!user) {
-      return res.status(404).json({ success: false, msg: "User not found" });
-    }
-
-    res.json({ success: true, user });
-
-  } catch (err) {
-    res.status(500).json({ success: false, msg: "Error updating role" });
-  }
-});
-
 // GET /api/public/stats - Get public system stats (for home page)
 router.get("/public/stats", async (req, res) => {
-  try {
-    const totalUsers = await User.countDocuments();
-    const totalAuctions = await Auction.countDocuments();
-    const totalBids = await Bid.countDocuments();
-
-    res.json({
-      success: true,
-      stats: { totalUsers, totalAuctions, totalBids }
-    });
-
-  } catch (err) {
-    res.status(500).json({ success: false, msg: "Error fetching stats" });
-  }
-});
-
-// GET /api/admin/stats - Get system stats
-router.get("/admin/stats", isLoggedIn, isAdmin, async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
     const totalAuctions = await Auction.countDocuments();
