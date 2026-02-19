@@ -438,6 +438,14 @@ router.post("/auction/:roomId/bid", isLoggedIn, async (req, res) => {
       });
     }
 
+    // Check if user is the creator
+    if (auction.createdBy === username) {
+      return res.status(400).json({
+        success: false,
+        msg: "You cannot bid on your own auction",
+      });
+    }
+
     // Check if the user is trying to bid consecutively
     if (auction.highestBidder === username) {
       return res.status(400).json({
@@ -447,12 +455,13 @@ router.post("/auction/:roomId/bid", isLoggedIn, async (req, res) => {
     }
 
     // ✅ ATOMIC UPDATE - Prevents race conditions!
-    // Only update if currentBid hasn't changed since we read it
+    // Only update if currentBid hasn't changed AND auction hasn't ended
     const updatedAuction = await Auction.findOneAndUpdate(
       {
         roomId: roomId,
         currentBid: auction.currentBid, // ← Only update if this is still the current bid
-        status: "active" // ← Ensure auction is still active
+        status: "active", // ← Ensure auction is still active
+        endTime: { $gt: new Date() } // ← Ensure auction hasn't expired yet
       },
       {
         $set: {
@@ -466,12 +475,23 @@ router.post("/auction/:roomId/bid", isLoggedIn, async (req, res) => {
       }
     );
 
-    // If update failed, someone else bid in the meantime
+    // If update failed, check why
     if (!updatedAuction) {
+      const latestAuction = await Auction.findOne({ roomId });
+      
+      // Check if auction ended
+      if (latestAuction.status === "ended" || latestAuction.endTime <= new Date()) {
+        return res.status(400).json({
+          success: false,
+          msg: "Auction has ended. Bid not accepted.",
+        });
+      }
+      
+      // Otherwise it's a bid conflict
       return res.status(409).json({
         success: false,
         msg: "Bid conflict - another bid was placed. Please try again with a higher amount.",
-        currentBid: (await Auction.findOne({ roomId }))?.currentBid
+        currentBid: latestAuction?.currentBid
       });
     }
 

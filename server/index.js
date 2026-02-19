@@ -137,19 +137,36 @@ const checkExpiredAuctions = async () => {
     });
 
     for (const auction of expiredAuctions) {
-      // End the auction
-      auction.status = "ended";
-      auction.winner = auction.highestBidder || null;
-      auction.finalPrice = auction.currentBid;
-      await auction.save();
+      // ✅ Atomic update - only end if still active and expired
+      // This prevents race condition with last-second bids
+      const endedAuction = await Auction.findOneAndUpdate(
+        {
+          roomId: auction.roomId,
+          status: "active",
+          endTime: { $lte: now }
+        },
+        {
+          $set: {
+            status: "ended",
+            winner: auction.highestBidder || null,
+            finalPrice: auction.currentBid
+          }
+        },
+        { new: true }
+      );
+
+      // If update failed, auction was already ended or got a last-second bid
+      if (!endedAuction) {
+        continue;
+      }
 
       // Mark winning bid
-      if (auction.highestBidder) {
+      if (endedAuction.highestBidder) {
         await Bid.updateOne(
           {
-            roomId: auction.roomId,
-            username: auction.highestBidder,
-            amount: auction.currentBid,
+            roomId: endedAuction.roomId,
+            username: endedAuction.highestBidder,
+            amount: endedAuction.currentBid,
           },
           { isWinning: true }
         );
@@ -157,7 +174,7 @@ const checkExpiredAuctions = async () => {
 
       // Clean up presence (mark all as left)
       await Presence.updateMany(
-        { roomId: auction.roomId, leftAt: null },
+        { roomId: endedAuction.roomId, leftAt: null },
         {
           status: "disconnected",
           leftAt: new Date(),
@@ -166,21 +183,21 @@ const checkExpiredAuctions = async () => {
 
       // Get final auction stats
       const finalStats = {
-        title: auction.title,
-        createdBy: auction.createdBy,
-        winner: auction.winner,
-        finalPrice: auction.finalPrice,
-        totalBids: await Bid.countDocuments({ roomId: auction.roomId }),
-        startingPrice: auction.startingPrice,
+        title: endedAuction.title,
+        createdBy: endedAuction.createdBy,
+        winner: endedAuction.winner,
+        finalPrice: endedAuction.finalPrice,
+        totalBids: await Bid.countDocuments({ roomId: endedAuction.roomId }),
+        startingPrice: endedAuction.startingPrice,
         endedAt: new Date(),
         endedBy: "timer",
       };
 
       // Notify all users in the room that auction ended
-      io.to(auction.roomId).emit("auction-ended", {
-        roomId: auction.roomId,
-        winner: auction.winner,
-        finalPrice: auction.finalPrice,
+      io.to(endedAuction.roomId).emit("auction-ended", {
+        roomId: endedAuction.roomId,
+        winner: endedAuction.winner,
+        finalPrice: endedAuction.finalPrice,
         message: "Auction has ended due to time expiry",
         finalStats: finalStats,
         showWinner: true,
@@ -198,6 +215,18 @@ app.use("/api", userRoutes);
 
 app.get("/", (req, res) => {
   res.send("Auction Server Running");
+});
+
+// 404 Route Handler
+app.use("*", (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Page not found",
+    error: {
+      statusCode: 404,
+      message: "The requested resource does not exist"
+    }
+  });
 });
 
 io.on("connection", (socket) => {
@@ -295,6 +324,11 @@ io.on("connection", (socket) => {
         return socket.emit("error", "Bid must be higher than current bid");
       }
 
+      // Check if user is the creator
+      if (auction.createdBy === username) {
+        return socket.emit("error", "You cannot bid on your own auction");
+      }
+
       // Check if the user is trying to bid consecutively (same user as highest bidder)
       if (auction.highestBidder === username) {
         return socket.emit("consecutive-bid-error", {
@@ -310,7 +344,8 @@ io.on("connection", (socket) => {
         {
           roomId: roomId,
           currentBid: auction.currentBid, // Only update if this is still the current bid
-          status: "active"
+          status: "active",
+          endTime: { $gt: new Date() } // Ensure auction hasn't expired
         },
         {
           $set: {
@@ -324,9 +359,16 @@ io.on("connection", (socket) => {
         }
       );
 
-      // If update failed, someone else bid in the meantime
+      // If update failed, check why
       if (!updatedAuction) {
         const latestAuction = await Auction.findOne({ roomId });
+        
+        // Check if auction ended
+        if (latestAuction.status === "ended" || latestAuction.endTime <= new Date()) {
+          return socket.emit("error", "Auction has ended. Bid not accepted.");
+        }
+        
+        // Otherwise it's a bid conflict
         return socket.emit("bid-conflict", {
           message: "Bid conflict - another bid was placed. Please try again with a higher amount.",
           currentBid: latestAuction?.currentBid,
