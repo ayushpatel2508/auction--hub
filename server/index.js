@@ -29,8 +29,6 @@ import userRoutes from "./routes/user_route.js";
 
 const app = express();
 
-// Trust proxy - IMPORTANT for Render, Heroku, AWS, etc.
-// This allows Express to trust the X-Forwarded-* headers from the proxy
 app.set('trust proxy', 1);
 
 app.use(cookieParser());
@@ -47,45 +45,45 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes).
-  standardHeaders: "draft-8", // draft-6: `RateLimit-*` headers; draft-7 & draft-8: combined `RateLimit` header
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
+// const limiter = rateLimit({
+//   windowMs: 15 * 60 * 1000, // 15 minutes
+//   limit: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes).
+//   standardHeaders: "draft-8", // draft-6: `RateLimit-*` headers; draft-7 & draft-8: combined `RateLimit` header
+//   legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
   
-  // IMPORTANT: Trust proxy headers to get real client IP
-  // Render/Heroku/AWS use X-Forwarded-For header
-  trustProxy: true,
+//   // IMPORTANT: Trust proxy headers to get real client IP
+//   // Render/Heroku/AWS use X-Forwarded-For header
+//   trustProxy: true,
   
-  // Skip failed requests (optional - don't count failed requests)
-  skipFailedRequests: false,
+//   // Skip failed requests (optional - don't count failed requests)
+//   skipFailedRequests: false,
   
-  // Skip successful requests (optional)
-  skipSuccessfulRequests: false,
+//   // Skip successful requests (optional)
+//   skipSuccessfulRequests: false,
   
-  // Custom key generator to use real IP from proxy
-  keyGenerator: (req) => {
-    // Get real IP from X-Forwarded-For header (set by Render proxy)
-    const forwarded = req.headers['x-forwarded-for'];
-    const ip = forwarded ? forwarded.split(',')[0].trim() : req.ip;
-    return ip;
-  },
+//   // Custom key generator to use real IP from proxy
+//   keyGenerator: (req) => {
+//     // Get real IP from X-Forwarded-For header (set by Render proxy)
+//     const forwarded = req.headers['x-forwarded-for'];
+//     const ip = forwarded ? forwarded.split(',')[0].trim() : req.ip;
+//     return ip;
+//   },
   
-  // Custom handler when limit is exceeded
-  handler: (req, res) => {
-    res.status(429).json({
-      success: false,
-      message: 'Too many requests from this IP, please try again later.',
-      retryAfter: Math.ceil(req.rateLimit.resetTime / 1000)
-    });
-  },
+//   // Custom handler when limit is exceeded
+//   handler: (req, res) => {
+//     res.status(429).json({
+//       success: false,
+//       message: 'Too many requests from this IP, please try again later.',
+//       retryAfter: Math.ceil(req.rateLimit.resetTime / 1000)
+//     });
+//   },
   
-  ipv6Subnet: 56, // Set to 60 or 64 to be less aggressive, or 52 or 48 to be more aggressive
-  // store: ... , // Redis, Memcached, etc. See below.
-});
+//   ipv6Subnet: 56, // Set to 60 or 64 to be less aggressive, or 52 or 48 to be more aggressive
+//   // store: ... , // Redis, Memcached, etc. See below.
+// });
 
-// Apply the rate limiting middleware to all requests.
-app.use(limiter);
+// // Apply the rate limiting middleware to all requests.
+// app.use(limiter);
 
 const server = createServer(app);
 
