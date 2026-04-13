@@ -34,69 +34,51 @@ app.set('trust proxy', 1);
 app.use(cookieParser());
 
 // CORS Configuration
+const allowedOrigins = process.env.CLIENT_URL?.split(",") || ["http://localhost:5173"];
+
 const corsOptions = {
-  origin: process.env.CLIENT_URL?.split(",") || ["http://localhost:5173"],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, Postman, or same-origin)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('Blocked by CORS:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Cookie"],
+  exposedHeaders: ["Set-Cookie"],
+  optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
-// const limiter = rateLimit({
-//   windowMs: 15 * 60 * 1000, // 15 minutes
-//   limit: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes).
-//   standardHeaders: "draft-8", // draft-6: `RateLimit-*` headers; draft-7 & draft-8: combined `RateLimit` header
-//   legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
-  
-//   // IMPORTANT: Trust proxy headers to get real client IP
-//   // Render/Heroku/AWS use X-Forwarded-For header
-//   trustProxy: true,
-  
-//   // Skip failed requests (optional - don't count failed requests)
-//   skipFailedRequests: false,
-  
-//   // Skip successful requests (optional)
-//   skipSuccessfulRequests: false,
-  
-//   // Custom key generator to use real IP from proxy
-//   keyGenerator: (req) => {
-//     // Get real IP from X-Forwarded-For header (set by Render proxy)
-//     const forwarded = req.headers['x-forwarded-for'];
-//     const ip = forwarded ? forwarded.split(',')[0].trim() : req.ip;
-//     return ip;
-//   },
-  
-//   // Custom handler when limit is exceeded
-//   handler: (req, res) => {
-//     res.status(429).json({
-//       success: false,
-//       message: 'Too many requests from this IP, please try again later.',
-//       retryAfter: Math.ceil(req.rateLimit.resetTime / 1000)
-//     });
-//   },
-  
-//   ipv6Subnet: 56, // Set to 60 or 64 to be less aggressive, or 52 or 48 to be more aggressive
-//   // store: ... , // Redis, Memcached, etc. See below.
-// });
-
-// // Apply the rate limiting middleware to all requests.
-// app.use(limiter);
 
 const server = createServer(app);
 
 // Socket.IO Configuration
+const socketAllowedOrigins = process.env.SOCKET_CORS_ORIGIN?.split(",") || [
+  "http://localhost:5173",
+  "http://localhost:3001",
+];
+
 const io = new Server(server, {
   cors: {
-    origin: process.env.SOCKET_CORS_ORIGIN?.split(",") || [
-      "http://localhost:5173",
-      "http://localhost:3001",
-    ],
+    origin: socketAllowedOrigins,
     methods: ["GET", "POST"],
     credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"],
   },
+  transports: ['websocket', 'polling'],
+  allowEIO3: true
 });
 
 const dbConnecting = async () => {
