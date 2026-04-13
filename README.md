@@ -2,6 +2,7 @@
 
 A real-time auction platform where users can create, join, and bid on auctions in real-time. Features include live bidding, watchlists, bid history, and user profiles.
 
+
 ## Features
 ### Real-time Bidding & Communication
 - **Real-time Bidding**: Powered by Socket.IO for instant updates across all participants.
@@ -67,24 +68,10 @@ auction-sockets/
 ### Prerequisites
 - Node.js (v18+)
 - MongoDB (local or Atlas)
-- Bun (optional, but used in server)
 - Cloudinary Account (for image uploads)
 
-### Environment Variables
-#### Server (`server/.env`):
-```text
-PORT=5000
-MONGODB_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret
-CLOUDINARY_CLOUD_NAME=name
-CLOUDINARY_API_KEY=key
-CLOUDINARY_API_SECRET=secret
-```
 
-#### Client (`client/.env`):
-```text
-VITE_API_URL=http://localhost:5000
-```
+
 
 ### Installation
 1.  **Clone the repository**:
@@ -95,7 +82,7 @@ VITE_API_URL=http://localhost:5000
 2.  **Install Server Dependencies**:
     ```bash
     cd server
-    npm install  # or bun install
+    npm install  
     ```
 3.  **Install Client Dependencies**:
     ```bash
@@ -117,6 +104,7 @@ cd client
 npm run dev
 ```
 Client runs on `http://localhost:5173`
+
 
 ## API Endpoints
 ### Authentication
