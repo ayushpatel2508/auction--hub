@@ -215,8 +215,8 @@ app.get("/", (req, res) => {
   res.send("Auction Server Running");
 });
 
-// 404 Route Handler
-app.use("*", (req, res) => {
+// 404 Route Handler - Express 5 compatible
+app.use((req, res) => {
   res.status(404).json({
     success: false,
     message: "Page not found",
