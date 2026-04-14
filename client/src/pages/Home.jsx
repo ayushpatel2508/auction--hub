@@ -13,7 +13,6 @@ import {
     Clock,
     ArrowRight,
     Sparkles,
-    Shield,
     Zap
 } from 'lucide-react'
 
@@ -74,11 +73,6 @@ const Home = () => {
             icon: Zap,
             title: 'Real-time Bidding',
             description: 'Experience live auctions with instant bid updates and notifications'
-        },
-        {
-            icon: Shield,
-            title: 'Secure Transactions',
-            description: 'Your bids and personal information are protected with enterprise-grade security'
         },
         {
             icon: Users,
@@ -149,7 +143,7 @@ const Home = () => {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {features.map((feature, index) => {
                         const Icon = feature.icon
                         return (
