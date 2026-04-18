@@ -114,7 +114,7 @@ const checkExpiredAuctions = async () => {
     });
 
     for (const auction of expiredAuctions) {
-      // ✅ Atomic update - only end if still active and expired
+      // Atomic update - only end if still active and expired
       // This prevents race condition with last-second bids
       const endedAuction = await Auction.findOneAndUpdate(
         {
@@ -316,7 +316,7 @@ io.on("connection", (socket) => {
         });
       }
 
-      // ✅ ATOMIC UPDATE - Prevents race conditions!
+      // ATOMIC UPDATE - Prevents race conditions!
       const updatedAuction = await Auction.findOneAndUpdate(
         {
           roomId: roomId,
@@ -398,7 +398,7 @@ io.on("connection", (socket) => {
 
         // Send different notifications based on whether user is creator or not
         const notificationMessage = isCreator
-          ? `👑 Auction creator ${username} has left the auction. The auction continues without them.`
+          ? `Auction creator ${username} has left the auction. The auction continues without them.`
           : `${username} has left the auction`;
 
         // Notify ONLY OTHER USERS (not the one who left) using socket.to()

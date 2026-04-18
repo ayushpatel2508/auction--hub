@@ -251,7 +251,7 @@ router.post("/auction/:roomId/quit", isLoggedIn, async (req, res) => {
 
     // Send different notifications based on whether user is creator or not
     const notificationMessage = isCreator 
-      ? `👑 Auction creator ${username} has left the auction. The auction continues without them.`
+      ? `Auction creator ${username} has left the auction. The auction continues without them.`
       : `${username} has left the auction`;
 
     // Emit to socket for real-time notification to other users
@@ -454,7 +454,7 @@ router.post("/auction/:roomId/bid", isLoggedIn, async (req, res) => {
       });
     }
 
-    // ✅ ATOMIC UPDATE - Prevents race conditions!
+    // ATOMIC UPDATE - Prevents race conditions!
     // Only update if currentBid hasn't changed AND auction hasn't ended
     const updatedAuction = await Auction.findOneAndUpdate(
       {
