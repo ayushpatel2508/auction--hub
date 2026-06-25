@@ -17,7 +17,9 @@ import {
     Image as ImageIcon,
     AlertCircle,
     CheckCircle,
-    Gavel
+    Gavel,
+    Lock,
+    Copy
 } from 'lucide-react'
 
 const CreateAuction = () => {
@@ -31,16 +33,20 @@ const CreateAuction = () => {
         description: '',
         startingPrice: '',
         duration: '60', // minutes
-        category: 'Other'
+        category: 'Other',
+        isPrivate: false
     })
     const [imageFile, setImageFile] = useState(null)
     const [imagePreview, setImagePreview] = useState(null)
     const [loading, setLoading] = useState(false)
     const [errors, setErrors] = useState({})
+    const [createdPasskey, setCreatedPasskey] = useState(null)
+    const [createdRoomId, setCreatedRoomId] = useState(null)
 
     const handleInputChange = (e) => {
-        const { name, value } = e.target
-        setFormData(prev => ({ ...prev, [name]: value }))
+        const { name, value, type, checked } = e.target
+        const val = type === 'checkbox' ? checked : value
+        setFormData(prev => ({ ...prev, [name]: val }))
 
         // Clear error when user starts typing
         if (errors[name]) {
@@ -131,6 +137,7 @@ const CreateAuction = () => {
             submitData.append('startingPrice', formData.startingPrice)
             submitData.append('duration', formData.duration)
             submitData.append('category', formData.category)
+            submitData.append('isPrivate', formData.isPrivate)
 
             if (imageFile) {
                 submitData.append('image', imageFile)
@@ -140,7 +147,12 @@ const CreateAuction = () => {
 
             if (response.success) {
                 toast.success('Auction Created!', 'Your auction is now live and accepting bids.')
-                navigate(`/auction/${response.auction.roomId}`)
+                if (response.auction.passkey) {
+                    setCreatedPasskey(response.auction.passkey)
+                    setCreatedRoomId(response.auction.roomId)
+                } else {
+                    navigate(`/auction/${response.auction.roomId}`)
+                }
             }
         } catch (error) {
             console.error('Error creating auction:', error)
@@ -183,6 +195,52 @@ const CreateAuction = () => {
                     List your item and start receiving bids from buyers worldwide
                 </p>
             </div>
+
+            {createdPasskey && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <Card className="w-full max-w-md animate-in fade-in zoom-in">
+                        <CardHeader className="text-center pb-2">
+                            <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                                <Lock className="h-6 w-6 text-primary" />
+                            </div>
+                            <CardTitle className="text-2xl">Private Room Created</CardTitle>
+                        </CardHeader>
+                        <CardContent className="text-center space-y-6 pt-4">
+                            <p className="text-muted-foreground">
+                                Your private auction is ready. Share this passkey with people you want to invite.
+                            </p>
+                            
+                            <div className="bg-muted p-6 rounded-lg border flex items-center justify-between">
+                                <span className="text-3xl font-mono tracking-widest font-bold">
+                                    {createdPasskey}
+                                </span>
+                                <Button 
+                                    variant="outline" 
+                                    size="icon"
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(createdPasskey)
+                                        toast.success('Copied to clipboard!')
+                                    }}
+                                >
+                                    <Copy className="h-4 w-4" />
+                                </Button>
+                            </div>
+                            
+                            <div className="bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-200 p-3 rounded text-sm text-left flex gap-2">
+                                <AlertCircle className="h-5 w-5 shrink-0" />
+                                <p>Save this passkey now. It will not be shown again.</p>
+                            </div>
+
+                            <Button 
+                                className="w-full" 
+                                onClick={() => navigate(`/auction/${createdRoomId}`)}
+                            >
+                                Enter Auction Room
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Basic Information */}
@@ -260,6 +318,27 @@ const CreateAuction = () => {
                                     </option>
                                 ))}
                             </select>
+                        </div>
+
+                        {/* Private Auction Checkbox */}
+                        <div className="flex items-center space-x-2 pt-2 pb-2 border-t mt-4">
+                            <input
+                                type="checkbox"
+                                id="isPrivate"
+                                name="isPrivate"
+                                checked={formData.isPrivate}
+                                onChange={handleInputChange}
+                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                disabled={loading}
+                            />
+                            <div className="space-y-1">
+                                <label htmlFor="isPrivate" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                    Make this a Private Auction
+                                </label>
+                                <p className="text-xs text-muted-foreground">
+                                    Only users with the generated passkey will be able to view or join.
+                                </p>
+                            </div>
                         </div>
 
                         {/* Description */}

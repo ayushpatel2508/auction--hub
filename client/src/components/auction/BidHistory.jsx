@@ -17,7 +17,7 @@ const BidHistory = ({ bids = [], currentUser, highestBidder, auctionStatus }) =>
                 </CardHeader>
                 <CardContent>
                     <p className="text-muted-foreground text-center py-8">
-                        No bids placed yet. Be the first to bid!
+                        No bids placed yet
                     </p>
                 </CardContent>
             </Card>

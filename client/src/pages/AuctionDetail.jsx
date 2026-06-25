@@ -6,7 +6,6 @@ import { Badge } from '../components/ui/badge'
 import { Avatar, AvatarFallback } from '../components/ui/avatar'
 import BiddingPanel from '../components/auction/BiddingPanel'
 import BidHistory from '../components/auction/BidHistory'
-import BidTest from '../components/auction/BidTest'
 import { useSocket } from '../hooks/useSocket'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../hooks/useToast'
@@ -29,7 +28,12 @@ import {
     Gavel,
     Users,
     Calendar,
-    DollarSign
+    DollarSign,
+    Lock,
+    Key,
+    LogOut,
+    Copy,
+    Check
 } from 'lucide-react'
 
 const AuctionDetail = () => {
@@ -41,10 +45,15 @@ const AuctionDetail = () => {
 
     const [auction, setAuction] = useState(null)
     const [bidHistory, setBidHistory] = useState([])
-    const [onlineUsers, setOnlineUsers] = useState([])
     const [loading, setLoading] = useState(true)
     const [timeRemaining, setTimeRemaining] = useState(null)
     const [isWatched, setIsWatched] = useState(false)
+    const [showUnlockScreen, setShowUnlockScreen] = useState(false)
+    const [passkeyInput, setPasskeyInput] = useState('')
+    const [unlocking, setUnlocking] = useState(false)
+    const [isQuitting, setIsQuitting] = useState(false)
+    const [showShareDialog, setShowShareDialog] = useState(false)
+    const [isCopied, setIsCopied] = useState(false)
 
     useEffect(() => {
         if (roomId) {
@@ -56,12 +65,10 @@ const AuctionDetail = () => {
         if (socket && auction && isAuthenticated) {
             joinRoom(roomId)
 
-            // Socket event listeners - using correct event names from backend
             socket.on('bid-placed', handleBidPlaced)
-            socket.on('bid-update', handleBidUpdate) // Backend emits this event
+            socket.on('bid-update', handleBidUpdate)
             socket.on('user-joined-notification', handleUserJoined)
             socket.on('user-quit-auction', handleUserLeft)
-            socket.on('online-users-updated', handleOnlineUsersUpdate)
             socket.on('auction-joined', handleAuctionJoined)
             socket.on('auction-ended', handleAuctionEnded)
             socket.on('consecutive-bid-error', handleConsecutiveBidError)
@@ -72,7 +79,6 @@ const AuctionDetail = () => {
                 socket.off('bid-update')
                 socket.off('user-joined-notification')
                 socket.off('user-quit-auction')
-                socket.off('online-users-updated')
                 socket.off('auction-joined')
                 socket.off('auction-ended')
                 socket.off('consecutive-bid-error')
@@ -97,13 +103,17 @@ const AuctionDetail = () => {
             if (response.success) {
                 setAuction(response.auction)
                 setBidHistory(response.auction.bidHistory || [])
-                setOnlineUsers(response.auction.onlineUsers || [])
                 setTimeRemaining(formatTimeRemaining(response.auction.endTime))
+                setShowUnlockScreen(false)
             }
         } catch (error) {
             console.error('Error loading auction:', error)
-            toast.error('Error', 'Failed to load auction details')
-            navigate('/auctions')
+            if (error.message.includes('Passkey required') || error.message.includes('Private room')) {
+                setShowUnlockScreen(true)
+            } else {
+                toast.error('Error', 'Failed to load auction details')
+                navigate('/auctions')
+            }
         } finally {
             setLoading(false)
         }
@@ -151,11 +161,9 @@ const AuctionDetail = () => {
         if (data.showAlert && data.username !== user) {
             toast.info(data.message)
         }
-        setOnlineUsers(data.onlineUsers || [])
-    }
-
-    const handleOnlineUsersUpdate = (data) => {
-        setOnlineUsers(data.onlineUsers || [])
+        if (auction && data.joinedUsers) {
+            setAuction(prev => ({...prev, joinedUsers: data.joinedUsers}))
+        }
     }
 
     const handleAuctionJoined = (message) => {
@@ -215,17 +223,68 @@ const AuctionDetail = () => {
         toast.success(isWatched ? 'Removed from watchlist' : 'Added to watchlist')
     }
 
-    const handleShare = async () => {
+    const handleShare = () => {
+        setShowShareDialog(true)
+    }
+
+    const handleCopyLink = async () => {
+        const url = window.location.href
         try {
-            await navigator.share({
-                title: auction.title,
-                text: `Check out this auction: ${auction.title}`,
-                url: window.location.href
-            })
-        } catch (error) {
-            // Fallback to clipboard
-            navigator.clipboard.writeText(window.location.href)
+            await navigator.clipboard.writeText(url)
+            setIsCopied(true)
+            setTimeout(() => setIsCopied(false), 2000)
             toast.success('Link copied to clipboard!')
+        } catch (error) {
+            // Fallback for older browsers
+            try {
+                const textField = document.createElement('textarea')
+                textField.innerText = url
+                document.body.appendChild(textField)
+                textField.select()
+                document.execCommand('copy')
+                textField.remove()
+                setIsCopied(true)
+                setTimeout(() => setIsCopied(false), 2000)
+                toast.success('Link copied to clipboard!')
+            } catch (err) {
+                console.error('Failed to copy:', err)
+                toast.error('Failed to copy link', 'Please copy it manually from the address bar')
+            }
+        }
+    }
+
+    const handleUnlock = async (e) => {
+        e.preventDefault()
+        if (!passkeyInput.trim()) return
+        
+        setUnlocking(true)
+        try {
+            const response = await auctionAPI.unlockRoom(roomId, passkeyInput.trim())
+            if (response.success) {
+                toast.success('Room Unlocked!')
+                setLoading(true)
+                loadAuction() // Reload the auction data now that we have access
+            }
+        } catch (error) {
+            toast.error('Invalid Passkey', 'The passkey you entered is incorrect')
+        } finally {
+            setUnlocking(false)
+        }
+    }
+
+    const handleQuitAuction = async () => {
+        if (window.confirm("Are you sure you want to permanently exit this auction? All your previous bids will be deleted and you will be removed from the participant list.")) {
+            setIsQuitting(true)
+            try {
+                const response = await auctionAPI.quit(roomId)
+                if (response.success) {
+                    toast.success("Successfully exited the auction.")
+                    navigate('/auctions')
+                }
+            } catch (error) {
+                toast.error("Failed to exit auction", error.message)
+                setIsQuitting(false)
+            }
         }
     }
 
@@ -245,6 +304,43 @@ const AuctionDetail = () => {
                         </div>
                     </div>
                 </div>
+            </div>
+        )
+    }
+
+    if (showUnlockScreen) {
+        return (
+            <div className="max-w-md mx-auto py-12">
+                <Card className="text-center shadow-lg border-primary/20">
+                    <CardHeader>
+                        <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                            <Lock className="h-8 w-8 text-primary" />
+                        </div>
+                        <CardTitle className="text-2xl">Private Auction Room</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground mb-6">
+                            This is a private auction. You need a passkey from the creator to view or bid on this item.
+                        </p>
+                        <form onSubmit={handleUnlock} className="space-y-4">
+                            <div className="relative">
+                                <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                                <input
+                                    type="text"
+                                    placeholder="Enter passkey"
+                                    value={passkeyInput}
+                                    onChange={(e) => setPasskeyInput(e.target.value)}
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pl-10 text-center tracking-widest font-mono font-bold uppercase"
+                                    disabled={unlocking}
+                                    maxLength={8}
+                                />
+                            </div>
+                            <Button type="submit" className="w-full" disabled={!passkeyInput.trim() || unlocking}>
+                                {unlocking ? 'Verifying...' : 'Unlock Room'}
+                            </Button>
+                        </form>
+                    </CardContent>
+                </Card>
             </div>
         )
     }
@@ -277,6 +373,17 @@ const AuctionDetail = () => {
                 </Button>
 
                 <div className="flex items-center space-x-2">
+                    {auction.createdBy !== user && auction.status !== 'ended' && (
+                        <Button 
+                            variant="destructive" 
+                            size="sm" 
+                            onClick={handleQuitAuction}
+                            disabled={isQuitting}
+                        >
+                            <LogOut className="h-4 w-4 mr-2" />
+                            {isQuitting ? 'Exiting...' : 'Exit Auction'}
+                        </Button>
+                    )}
                     <Button variant="outline" size="sm" onClick={handleWatchlistToggle}>
                         <Heart className={`h-4 w-4 mr-2 ${isWatched ? 'fill-red-500 text-red-500' : ''}`} />
                         {isWatched ? 'Watching' : 'Watch'}
@@ -317,14 +424,6 @@ const AuctionDetail = () => {
                                     {status.text}
                                 </Badge>
                             </div>
-
-                            {/* Online Users */}
-                            {auction.status !== 'ended' && onlineUsers.length > 0 && (
-                                <div className="absolute top-4 right-4 flex items-center space-x-1 bg-background/90 rounded-full px-3 py-1">
-                                    <Eye className="h-4 w-4" />
-                                    <span className="text-sm font-medium">{onlineUsers.length}</span>
-                                </div>
-                            )}
                         </div>
                     </Card>
 
@@ -418,42 +517,53 @@ const AuctionDetail = () => {
                         highestBidder={auction.highestBidder}
                         auctionStatus={auction.status}
                     />
-
-                    {/* Test Component - Remove this in production */}
-                    <BidTest roomId={roomId} />
-
-                    {/* Online Users */}
-                    {auction.status !== 'ended' && onlineUsers.length > 0 && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center space-x-2">
-                                    <Users className="h-5 w-5" />
-                                    <span>Online Users</span>
-                                    <Badge variant="secondary">{onlineUsers.length}</Badge>
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-2">
-                                    {onlineUsers.map((username) => (
-                                        <div key={username} className="flex items-center space-x-2">
-                                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                            <Avatar className="h-6 w-6">
-                                                <AvatarFallback className="text-xs">
-                                                    {getInitials(username)}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            <span className="text-sm">{username}</span>
-                                            {username === user && (
-                                                <Badge variant="outline" className="text-xs">You</Badge>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-                </div>
             </div>
+            </div>
+            {showShareDialog && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <Card className="w-full max-w-md animate-in fade-in zoom-in shadow-xl">
+                        <CardHeader className="text-center pb-2">
+                            <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                                <Share2 className="h-6 w-6 text-primary" />
+                            </div>
+                            <CardTitle className="text-2xl">Share Auction</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4 pt-4">
+                            <p className="text-muted-foreground text-center text-sm">
+                                Copy the link below to share this auction room with others.
+                            </p>
+                            
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={window.location.href}
+                                    readOnly
+                                    className="flex h-10 w-full rounded-md border border-input bg-muted px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 select-all font-mono"
+                                />
+                                <Button 
+                                    variant="outline" 
+                                    onClick={handleCopyLink}
+                                    className={`shrink-0 ${isCopied ? 'text-green-500 border-green-500 hover:text-green-600 hover:bg-green-50' : ''}`}
+                                >
+                                    {isCopied ? (
+                                        <Check className="h-4 w-4 mr-2" />
+                                    ) : (
+                                        <Copy className="h-4 w-4 mr-2" />
+                                    )}
+                                    {isCopied ? 'Copied' : 'Copy'}
+                                </Button>
+                            </div>
+                            
+                            <Button 
+                                className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white" 
+                                onClick={() => setShowShareDialog(false)}
+                            >
+                                Close
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
         </div>
     )
 }

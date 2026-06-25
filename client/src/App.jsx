@@ -49,9 +49,11 @@ function App() {
                     } />
 
                     <Route path="/auction/:roomId" element={
-                        <Layout>
-                            <AuctionDetail />
-                        </Layout>
+                        <ProtectedRoute>
+                            <Layout>
+                                <AuctionDetail />
+                            </Layout>
+                        </ProtectedRoute>
                     } />
 
                     {/* Protected routes */}

@@ -39,6 +39,7 @@ export const auctionAPI = {
     quit: (roomId) => client.post(`/auction/${roomId}/quit`),
     getBids: (roomId) => client.get(`/auction/${roomId}/bids`),
     placeBid: (roomId, amount) => client.post(`/auction/${roomId}/bid`, { amount }),
+    unlockRoom: (roomId, passkey) => client.post(`/auction/${roomId}/unlock`, { passkey }),
 }
 
 export const userAPI = {

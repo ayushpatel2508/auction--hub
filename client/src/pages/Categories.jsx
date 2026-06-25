@@ -129,10 +129,6 @@ const Categories = () => {
             {/* Call to Action */}
             <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
                 <CardContent className="text-center py-12">
-                    <h3 className="text-2xl font-bold mb-4">Can't Find What You're Looking For?</h3>
-                    <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                        Create a custom search alert and we'll notify you when items matching your criteria are listed.
-                    </p>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <Button asChild>
                             <Link to="/auctions">

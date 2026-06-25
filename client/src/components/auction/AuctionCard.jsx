@@ -4,6 +4,7 @@ import { Card, CardContent, CardFooter } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { Avatar, AvatarFallback } from '../ui/avatar'
+import { useAuth } from '../../contexts/AuthContext'
 import {
     formatCurrency,
     formatTimeRemaining,
@@ -16,10 +17,12 @@ import {
     User,
     Eye,
     Heart,
-    Gavel
+    Gavel,
+    Lock
 } from 'lucide-react'
 
 const AuctionCard = ({ auction, onWatchlistToggle, isWatched = false }) => {
+    const { isAuthenticated } = useAuth()
     const [timeRemaining, setTimeRemaining] = useState(formatTimeRemaining(auction.endTime))
     const status = getAuctionStatus(auction)
 
@@ -57,24 +60,31 @@ const AuctionCard = ({ auction, onWatchlistToggle, isWatched = false }) => {
                     )}
 
                     {/* Status Badge */}
-                    <div className="absolute top-3 left-3">
+                    <div className="absolute top-3 left-3 flex gap-2">
                         <Badge
                             variant={status.status === 'ended' ? 'destructive' : status.status === 'urgent' ? 'warning' : 'success'}
                             className="shadow-sm"
                         >
                             {status.text}
                         </Badge>
+                        {auction.isPrivate && (
+                            <Badge variant="secondary" className="shadow-sm px-1.5">
+                                <Lock className="h-3 w-3" />
+                            </Badge>
+                        )}
                     </div>
 
                     {/* Watchlist Button */}
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-3 right-3 bg-background/80 hover:bg-background"
-                        onClick={handleWatchlistClick}
-                    >
-                        <Heart className={`h-4 w-4 ${isWatched ? 'fill-red-500 text-red-500' : ''}`} />
-                    </Button>
+                    {isAuthenticated && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute top-3 right-3 bg-background/80 hover:bg-background"
+                            onClick={handleWatchlistClick}
+                        >
+                            <Heart className={`h-4 w-4 ${isWatched ? 'fill-red-500 text-red-500' : ''}`} />
+                        </Button>
+                    )}
 
                     {/* Online Users Count */}
                     {auction.onlineUsers && auction.onlineUsers.length > 0 && (
@@ -99,22 +109,30 @@ const AuctionCard = ({ auction, onWatchlistToggle, isWatched = false }) => {
                     {/* Current Bid */}
                     <div className="flex items-center justify-between mb-3">
                         <div>
-                            <p className="text-xs text-muted-foreground">Current Bid</p>
+                            <p className="text-xs text-muted-foreground">
+                                {status.status === 'ended' ? 'Final Price' : 'Current Bid'}
+                            </p>
                             <p className="text-xl font-bold text-primary">
                                 {formatCurrency(auction.currentBid)}
                             </p>
                         </div>
-                        {auction.highestBidder && (
+                        {(status.status === 'ended' || auction.highestBidder) && (
                             <div className="text-right">
-                                <p className="text-xs text-muted-foreground">Leading Bidder</p>
-                                <div className="flex items-center space-x-1">
-                                    <Avatar className="h-5 w-5">
-                                        <AvatarFallback className="text-xs">
-                                            {getInitials(auction.highestBidder)}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <span className="text-sm font-medium">{auction.highestBidder}</span>
-                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                    {status.status === 'ended' ? 'Winner' : 'Leading Bidder'}
+                                </p>
+                                {auction.highestBidder ? (
+                                    <div className="flex items-center space-x-1 justify-end">
+                                        <Avatar className="h-5 w-5">
+                                            <AvatarFallback className="text-xs">
+                                                {getInitials(auction.highestBidder)}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <span className="text-sm font-medium">{auction.highestBidder}</span>
+                                    </div>
+                                ) : (
+                                    <span className="text-sm font-medium text-muted-foreground">N/A</span>
+                                )}
                             </div>
                         )}
                     </div>

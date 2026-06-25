@@ -13,7 +13,12 @@ import {
     Clock,
     ArrowRight,
     Sparkles,
-    Zap
+    Zap,
+    ShieldCheck,
+    CheckCircle,
+    Search,
+    Award,
+    CreditCard
 } from 'lucide-react'
 
 const Home = () => {
@@ -79,6 +84,13 @@ const Home = () => {
             title: 'Community Driven',
             description: 'Join thousands of buyers and sellers in our vibrant auction community'
         }
+    ]
+
+    const steps = [
+        { icon: Users, title: 'Create Account', description: 'Sign up for free and set up your profile.' },
+        { icon: Search, title: 'Find Items', description: 'Browse categories or search for specific products.' },
+        { icon: Zap, title: 'Place Bids', description: 'Join live auctions and place your bids in real-time.' },
+        { icon: Award, title: 'Win & Enjoy', description: 'Win the auction, pay securely, and get your item!' },
     ]
 
     return (
@@ -147,9 +159,9 @@ const Home = () => {
                     {features.map((feature, index) => {
                         const Icon = feature.icon
                         return (
-                            <Card key={index} className="text-center">
+                            <Card key={index} className="text-center border-none shadow-md">
                                 <CardHeader>
-                                    <div className="mx-auto w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
+                                    <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
                                         <Icon className="h-6 w-6 text-primary" />
                                     </div>
                                     <CardTitle className="text-xl">{feature.title}</CardTitle>
@@ -158,6 +170,36 @@ const Home = () => {
                                     <p className="text-muted-foreground">{feature.description}</p>
                                 </CardContent>
                             </Card>
+                        )
+                    })}
+                </div>
+            </section>
+
+            {/* How It Works Section */}
+            <section className="space-y-12 py-12 bg-muted/20 rounded-3xl px-6">
+                <div className="text-center space-y-4">
+                    <h2 className="text-3xl font-bold">How It Works</h2>
+                    <p className="text-muted-foreground max-w-2xl mx-auto">
+                        Getting started on AuctionHub is easy. Just follow these simple steps.
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 relative">
+                    {steps.map((step, index) => {
+                        const Icon = step.icon
+                        return (
+                            <div key={index} className="relative text-center space-y-4">
+                                <div className="mx-auto w-16 h-16 bg-background shadow-lg rounded-full flex items-center justify-center relative z-10 border-2 border-primary/20">
+                                    <Icon className="h-8 w-8 text-primary" />
+                                    <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
+                                        {index + 1}
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
+                                    <p className="text-muted-foreground text-sm">{step.description}</p>
+                                </div>
+                            </div>
                         )
                     })}
                 </div>

@@ -65,15 +65,8 @@ const Auctions = () => {
                 params.append('search', searchTerm)
             }
 
-            // Add category if not 'all'
-            if (selectedCategory && selectedCategory !== 'all') {
-                params.append('category', selectedCategory)
-            }
-
-            // Add status if not 'all'
-            if (filters.status && filters.status !== 'all') {
-                params.append('status', filters.status)
-            }
+            // We now handle category, status, and price filtering on the client side
+            // so we only send search to the API.
 
             console.log('Loading auctions with params:', params.toString())
 
@@ -191,27 +184,51 @@ const Auctions = () => {
         filters.priceMax
     ].filter(Boolean).length
 
-    // Simple client-side sorting
-    const getSortedAuctions = () => {
-        const sorted = [...auctions]
+    // Client-side filtering and sorting
+    const getFilteredAndSortedAuctions = () => {
+        let result = [...auctions]
 
-        if (sortBy === 'oldest') {
-            sorted.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
-        } else if (sortBy === 'price-low') {
-            sorted.sort((a, b) => a.currentBid - b.currentBid)
-        } else if (sortBy === 'price-high') {
-            sorted.sort((a, b) => b.currentBid - a.currentBid)
-        } else if (sortBy === 'ending-soon') {
-            sorted.sort((a, b) => new Date(a.endTime) - new Date(b.endTime))
-        } else {
-            // newest (default)
-            sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        // 1. Filter by Category
+        if (selectedCategory !== 'all') {
+            result = result.filter(a => {
+                const cat = a.category || 'Other'
+                return cat === selectedCategory
+            })
         }
 
-        return sorted
+        // 2. Filter by Status
+        if (filters.status !== 'all') {
+            result = result.filter(a => a.status === filters.status)
+        }
+
+        // 3. Filter by Price Min
+        if (filters.priceMin) {
+            result = result.filter(a => a.currentBid >= Number(filters.priceMin))
+        }
+
+        // 4. Filter by Price Max
+        if (filters.priceMax) {
+            result = result.filter(a => a.currentBid <= Number(filters.priceMax))
+        }
+
+        // 5. Sort
+        if (sortBy === 'oldest') {
+            result.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+        } else if (sortBy === 'price-low') {
+            result.sort((a, b) => a.currentBid - b.currentBid)
+        } else if (sortBy === 'price-high') {
+            result.sort((a, b) => b.currentBid - a.currentBid)
+        } else if (sortBy === 'ending-soon') {
+            result.sort((a, b) => new Date(a.endTime) - new Date(b.endTime))
+        } else {
+            // newest (default)
+            result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        }
+
+        return result
     }
 
-    const filteredAuctions = getSortedAuctions()
+    const filteredAuctions = getFilteredAndSortedAuctions()
 
     return (
         <div className="space-y-6">

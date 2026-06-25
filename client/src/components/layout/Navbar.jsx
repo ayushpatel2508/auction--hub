@@ -54,15 +54,17 @@ const Navbar = () => {
             <div className="container mx-auto px-4">
                 <div className="flex h-16 items-center justify-between">
                     {/* Logo */}
-                    <Link to="/" className="flex items-center space-x-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                            <Gavel className="h-5 w-5" />
-                        </div>
-                        <span className="text-xl font-bold">AuctionHub</span>
-                    </Link>
+                    <div className="flex flex-1 justify-start">
+                        <Link to="/" className="flex items-center space-x-2">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                                <Gavel className="h-5 w-5" />
+                            </div>
+                            <span className="text-xl font-bold">AuctionHub</span>
+                        </Link>
+                    </div>
 
                     {/* Desktop Navigation */}
-                    <div className="hidden md:flex items-center space-x-6">
+                    <div className="hidden md:flex flex-1 items-center justify-center space-x-6">
                         {navItems.map((item) => {
                             const Icon = item.icon
                             return (
@@ -82,11 +84,11 @@ const Navbar = () => {
                     </div>
 
                     {/* Desktop Auth Section */}
-                    <div className="hidden md:flex items-center space-x-4">
+                    <div className="hidden md:flex flex-1 items-center justify-end space-x-4">
                         {isAuthenticated ? (
                             <>
                                 {/* Create Auction */}
-                                <Button variant="outline" size="sm" asChild>
+                                <Button size="sm" asChild>
                                     <Link to="/create-auction">
                                         <Plus className="h-4 w-4 mr-2" />
                                         Create Auction

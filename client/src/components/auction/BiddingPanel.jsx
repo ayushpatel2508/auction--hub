@@ -107,35 +107,7 @@ const BiddingPanel = ({
         )
     }
 
-    if (isCreator) {
-        return (
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                        <Gavel className="h-5 w-5" />
-                        <span>Your Auction</span>
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="text-center py-6">
-                        <p className="text-muted-foreground mb-4">
-                            You cannot bid on your own auction
-                        </p>
-                        <div className="space-y-2">
-                            <p className="text-lg font-semibold">
-                                Current Bid: {formatCurrency(auction.currentBid)}
-                            </p>
-                            {auction.highestBidder && (
-                                <p className="text-sm text-muted-foreground">
-                                    Leading: {auction.highestBidder}
-                                </p>
-                            )}
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-        )
-    }
+
 
     return (
         <Card>
