@@ -6,6 +6,7 @@ import { Badge } from '../components/ui/badge'
 import AuctionCard from '../components/auction/AuctionCard'
 import { auctionAPI, adminAPI, userAPI, publicAPI } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
+import { useModal } from '../contexts/ModalContext'
 import {
     Gavel,
     TrendingUp,
@@ -23,6 +24,7 @@ import {
 
 const Home = () => {
     const { isAuthenticated } = useAuth()
+    const { openCreateAuction } = useModal()
     const [featuredAuctions, setFeaturedAuctions] = useState([])
     const [stats, setStats] = useState({ totalAuctions: 0, totalUsers: 0, totalBids: 0 })
     const [watchlist, setWatchlist] = useState([])
@@ -254,8 +256,8 @@ const Home = () => {
                                 Be the first to create an auction and start selling!
                             </p>
                             {isAuthenticated && (
-                                <Button asChild>
-                                    <Link to="/create-auction">Create First Auction</Link>
+                                <Button onClick={openCreateAuction}>
+                                    Create First Auction
                                 </Button>
                             )}
                         </CardContent>

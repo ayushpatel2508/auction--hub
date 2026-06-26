@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Badge } from '../components/ui/badge'
 import { Avatar, AvatarFallback } from '../components/ui/avatar'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog'
 import BiddingPanel from '../components/auction/BiddingPanel'
 import BidHistory from '../components/auction/BidHistory'
 import { useSocket } from '../hooks/useSocket'
@@ -54,6 +55,7 @@ const AuctionDetail = () => {
     const [isQuitting, setIsQuitting] = useState(false)
     const [showShareDialog, setShowShareDialog] = useState(false)
     const [isCopied, setIsCopied] = useState(false)
+    const [showParticipantsDialog, setShowParticipantsDialog] = useState(false)
 
     useEffect(() => {
         if (roomId) {
@@ -470,10 +472,14 @@ const AuctionDetail = () => {
                                     <p className="font-semibold">{formatRelativeTime(auction.createdAt)}</p>
                                 </div>
 
-                                <div className="text-center p-4 bg-muted/50 rounded-lg">
+                                <div 
+                                    className="text-center p-4 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/80 transition-colors"
+                                    onClick={() => setShowParticipantsDialog(true)}
+                                >
                                     <Users className="h-6 w-6 mx-auto mb-2 text-primary" />
                                     <p className="text-sm text-muted-foreground">Participants</p>
                                     <p className="font-semibold">{auction.joinedUsers?.length || 0}</p>
+                                    <p className="text-xs text-primary mt-1">View list</p>
                                 </div>
 
                                 <div className="text-center p-4 bg-muted/50 rounded-lg">
@@ -564,6 +570,40 @@ const AuctionDetail = () => {
                     </Card>
                 </div>
             )}
+
+            {/* Participants Dialog */}
+            <Dialog open={showParticipantsDialog} onOpenChange={setShowParticipantsDialog}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Users className="h-5 w-5" />
+                            Joined Participants
+                        </DialogTitle>
+                        <DialogDescription>
+                            Users who have joined this auction room
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="max-h-[300px] overflow-y-auto space-y-4 py-4">
+                        {auction.joinedUsers && auction.joinedUsers.length > 0 ? (
+                            auction.joinedUsers.map((participantUser, index) => (
+                                <div key={index} className="flex items-center space-x-3 p-2 rounded-lg bg-muted/30">
+                                    <Avatar className="h-8 w-8">
+                                        <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                                            {getInitials(participantUser)}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <span className="font-medium">{participantUser}</span>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="text-center py-6 text-muted-foreground">
+                                <Users className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                                <p>No participants yet</p>
+                            </div>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

@@ -4,6 +4,7 @@ import { Button } from '../ui/button'
 import { Avatar, AvatarFallback } from '../ui/avatar'
 import { Badge } from '../ui/badge'
 import { useAuth } from '../../contexts/AuthContext'
+import { useModal } from '../../contexts/ModalContext'
 import { getInitials } from '../../lib/utils'
 import {
     Menu,
@@ -22,6 +23,7 @@ import {
 
 const Navbar = () => {
     const { user, isAuthenticated, logout } = useAuth()
+    const { openCreateAuction } = useModal()
     const navigate = useNavigate()
     const location = useLocation()
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -88,11 +90,9 @@ const Navbar = () => {
                         {isAuthenticated ? (
                             <>
                                 {/* Create Auction */}
-                                <Button size="sm" asChild>
-                                    <Link to="/create-auction">
-                                        <Plus className="h-4 w-4 mr-2" />
-                                        Create Auction
-                                    </Link>
+                                <Button size="sm" onClick={openCreateAuction}>
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Create Auction
                                 </Button>
 
                                 {/* User Menu */}
@@ -183,14 +183,16 @@ const Navbar = () => {
                             {isAuthenticated ? (
                                 <>
                                     {/* Quick Actions */}
-                                    <Link
-                                        to="/create-auction"
-                                        className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent"
-                                        onClick={() => setIsMobileMenuOpen(false)}
+                                    <button
+                                        onClick={() => {
+                                            openCreateAuction()
+                                            setIsMobileMenuOpen(false)
+                                        }}
+                                        className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent w-full text-left"
                                     >
                                         <Plus className="h-5 w-5" />
                                         <span>Create Auction</span>
-                                    </Link>
+                                    </button>
 
                                     {/* User Info */}
                                     <div className="flex items-center space-x-2 px-3 py-2 bg-muted/50 rounded-md">

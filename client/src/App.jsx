@@ -1,6 +1,7 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
+import { ModalProvider } from './contexts/ModalContext'
 import Layout from './components/layout/Layout'
 import ProtectedRoute from './components/common/ProtectedRoute'
 
@@ -8,7 +9,6 @@ import ProtectedRoute from './components/common/ProtectedRoute'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
-import CreateAuction from './pages/CreateAuction'
 import Auctions from './pages/Auctions'
 import AuctionDetail from './pages/AuctionDetail'
 import Dashboard from './pages/Dashboard'
@@ -21,8 +21,9 @@ import NotFound from './pages/NotFound'
 function App() {
     return (
         <AuthProvider>
-            <Router>
-                <Routes>
+            <ModalProvider>
+                <Router>
+                    <Routes>
                     {/* Public routes */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
@@ -57,14 +58,6 @@ function App() {
                     } />
 
                     {/* Protected routes */}
-                    <Route path="/create-auction" element={
-                        <ProtectedRoute>
-                            <Layout>
-                                <CreateAuction />
-                            </Layout>
-                        </ProtectedRoute>
-                    } />
-
                     <Route path="/dashboard" element={
                         <ProtectedRoute>
                             <Layout>
@@ -121,7 +114,8 @@ function App() {
 
                     <Route path="*" element={<Navigate to="/404" replace />} />
                 </Routes>
-            </Router>
+                </Router>
+            </ModalProvider>
         </AuthProvider>
     )
 }

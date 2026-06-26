@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Avatar, AvatarFallback } from '../components/ui/avatar'
 import AuctionCard from '../components/auction/AuctionCard'
 import { useAuth } from '../contexts/AuthContext'
+import { useModal } from '../contexts/ModalContext'
 import { useToast } from '../hooks/useToast'
 import { userAPI } from '../lib/api'
 import {
@@ -33,6 +34,7 @@ import {
 const Dashboard = () => {
     const { user } = useAuth()
     const { toast } = useToast()
+    const { openCreateAuction } = useModal()
 
     const [activeTab, setActiveTab] = useState('overview')
     const [loading, setLoading] = useState(true)
@@ -153,11 +155,9 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                <Button asChild>
-                    <Link to="/create-auction">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Create Auction
-                    </Link>
+                <Button onClick={openCreateAuction}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Auction
                 </Button>
             </div>
 
@@ -257,8 +257,8 @@ const Dashboard = () => {
                                     <div className="text-center py-8">
                                         <Gavel className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                                         <p className="text-muted-foreground mb-4">No active auctions</p>
-                                        <Button size="sm" asChild>
-                                            <Link to="/create-auction">Create Your First Auction</Link>
+                                        <Button size="sm" onClick={openCreateAuction}>
+                                            Create Your First Auction
                                         </Button>
                                     </div>
                                 )}
@@ -271,11 +271,9 @@ const Dashboard = () => {
                 <TabsContent value="my-auctions" className="space-y-6">
                     <div className="flex items-center justify-between">
                         <h2 className="text-2xl font-semibold">My Auctions</h2>
-                        <Button asChild>
-                            <Link to="/create-auction">
-                                <Plus className="h-4 w-4 mr-2" />
-                                Create New
-                            </Link>
+                        <Button onClick={openCreateAuction}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Create New
                         </Button>
                     </div>
 
@@ -293,8 +291,8 @@ const Dashboard = () => {
                                 <p className="text-muted-foreground mb-4">
                                     Create your first auction to start selling items
                                 </p>
-                                <Button asChild>
-                                    <Link to="/create-auction">Create First Auction</Link>
+                                <Button onClick={openCreateAuction}>
+                                    Create First Auction
                                 </Button>
                             </CardContent>
                         </Card>

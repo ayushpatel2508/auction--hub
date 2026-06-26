@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
+import { useModal } from '../contexts/ModalContext'
 import { AUCTION_CATEGORIES } from '../lib/utils'
 import {
     Smartphone,
@@ -19,6 +20,8 @@ import {
 } from 'lucide-react'
 
 const Categories = () => {
+    const { openCreateAuction } = useModal()
+
     const categoryIcons = {
         'Electronics': Smartphone,
         'Fashion': Shirt,
@@ -135,10 +138,8 @@ const Categories = () => {
                                 Browse All Auctions
                             </Link>
                         </Button>
-                        <Button variant="outline" asChild>
-                            <Link to="/create-auction">
-                                Sell Your Items
-                            </Link>
+                        <Button variant="outline" onClick={openCreateAuction}>
+                            Sell Your Items
                         </Button>
                     </div>
                 </CardContent>

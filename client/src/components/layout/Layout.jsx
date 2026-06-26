@@ -4,6 +4,7 @@ import Navbar from './Navbar'
 import Footer from './Footer'
 import { ToastProvider, ToastViewport } from '../ui/toast'
 import { Toaster } from '../common/Toaster'
+import CreateAuctionModal from '../auction/CreateAuctionModal'
 
 const Layout = ({ children }) => {
     const location = useLocation()
@@ -19,6 +20,7 @@ const Layout = ({ children }) => {
                 {!isSingleAuctionPage && <Footer />}
                 <ToastViewport />
                 <Toaster />
+                <CreateAuctionModal />
             </div>
         </ToastProvider>
     )
