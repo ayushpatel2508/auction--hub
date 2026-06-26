@@ -37,6 +37,6 @@ const bidSchema = new mongoose.Schema({
 bidSchema.index({ roomId: 1, placedAt: -1 });  // Bid history by roomId (most recent first)
 bidSchema.index({ username: 1, placedAt: -1 }); // User's bid history (most recent first)
 bidSchema.index({ roomId: 1, isWinning: 1 }); // Find winning bids per room
-bidSchema.index({ socketId: 1 }); // Fast lookup by socket ID
+
 
 export const Bid = mongoose.model("Bid", bidSchema);

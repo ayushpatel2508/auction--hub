@@ -1,164 +1,42 @@
 import express from "express";
-import { User } from "../models/user.js";
-import { Auction } from "../models/auction.js";
-import { Bid } from "../models/bid.js";
 import { isLoggedIn } from "../middleware/isloggedIn.js";
+import { 
+  getProfile, 
+  getWatchlist, 
+  toggleWatchlist, 
+  getMyAuctions, 
+  getJoinedAuctions, 
+  getMyBids, 
+  getWonAuctions, 
+  getPublicStats 
+} from "../controllers/userController.js";
 
 const router = express.Router();
 
 // ========== USER ROUTES ==========
 
 // GET /api/users/profile - Get user profile
-router.get("/profile", isLoggedIn, async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id).select('-password');
-    
-    if (!user) {
-      return res.status(404).json({ success: false, msg: "User not found" });
-    }
-
-    res.json({ success: true, user });
-
-  } catch (err) {
-    res.status(500).json({ success: false, msg: "Error fetching profile" });
-  }
-});
+router.get("/profile", isLoggedIn, getProfile);
 
 // GET /api/users/watchlist - Get user's watchlist
-router.get("/users/watchlist", isLoggedIn, async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
-    if (!user) {
-      return res.status(404).json({ success: false, msg: "User not found" });
-    }
-
-    // Find all auctions that are in the user's watchlist
-    const auctions = await Auction.find({ roomId: { $in: user.watchlist } });
-
-    res.json({ success: true, auctions });
-  } catch (err) {
-    console.error("Error fetching watchlist:", err);
-    res.status(500).json({ success: false, msg: "Error fetching watchlist" });
-  }
-});
+router.get("/users/watchlist", isLoggedIn, getWatchlist);
 
 // POST /api/users/watchlist/:roomId - Toggle watchlist item
-router.post("/users/watchlist/:roomId", isLoggedIn, async (req, res) => {
-  try {
-    const { roomId } = req.params;
-    const user = await User.findById(req.user._id);
-
-    if (!user) {
-      return res.status(404).json({ success: false, msg: "User not found" });
-    }
-
-    // Initialize watchlist if it doesn't exist (migration for old users)
-    if (!user.watchlist) {
-      user.watchlist = [];
-    }
-
-    const index = user.watchlist.indexOf(roomId);
-    let isAdded = false;
-
-    if (index === -1) {
-      // Add to watchlist
-      user.watchlist.push(roomId);
-      isAdded = true;
-    } else {
-      // Remove from watchlist
-      user.watchlist.splice(index, 1);
-      isAdded = false;
-    }
-
-    await user.save();
-
-    res.json({ success: true, isAdded, watchlist: user.watchlist });
-  } catch (err) {
-    console.error("Error toggling watchlist:", err);
-    res.status(500).json({ success: false, msg: "Error updating watchlist" });
-  }
-});
+router.post("/users/watchlist/:roomId", isLoggedIn, toggleWatchlist);
 
 // GET /api/users/my-auctions - Get user's created auctions
-router.get("/users/my-auctions", isLoggedIn, async (req, res) => {
-  try {
-    const auctions = await Auction.find({ createdBy: req.user.username });
-
-    res.json({ success: true, auctions });
-
-  } catch (err) {
-    res.status(500).json({ success: false, msg: "Error fetching auctions" });
-  }
-});
+router.get("/users/my-auctions", isLoggedIn, getMyAuctions);
 
 // GET /api/users/joined-auctions - Get auctions user has joined (active + past month)
-router.get("/users/joined-auctions", isLoggedIn, async (req, res) => {
-  try {
-    // Calculate date for last month
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-
-    // Find auctions where user is in joinedUsers array (persistent participation)
-    const joinedAuctions = await Auction.find({
-      joinedUsers: req.user.username,  // User is in joinedUsers array
-      createdBy: { $ne: req.user.username }, // Exclude auctions created by user
-      $or: [
-        { status: "active" }, // Include all active auctions
-        { 
-          status: "ended", // Include ended auctions from last month
-          createdAt: { $gte: oneMonthAgo }
-        }
-      ]
-    }).sort({ createdAt: -1 });
-
-    res.json({ success: true, auctions: joinedAuctions });
-
-  } catch (err) {
-    res.status(500).json({ success: false, msg: "Error fetching joined auctions" });
-  }
-});
+router.get("/users/joined-auctions", isLoggedIn, getJoinedAuctions);
 
 // GET /api/users/my-bids - Get user's bid history (latest 10)
-router.get("/users/my-bids", isLoggedIn, async (req, res) => {
-  try {
-    const bids = await Bid.find({ username: req.user.username })
-      .sort({ placedAt: -1 })
-      .limit(10);
-
-    res.json({ success: true, bids });
-
-  } catch (err) {
-    res.status(500).json({ success: false, msg: "Error fetching bids" });
-  }
-});
+router.get("/users/my-bids", isLoggedIn, getMyBids);
 
 // GET /api/users/won-auctions - Get auctions user won
-router.get("/users/won-auctions", isLoggedIn, async (req, res) => {
-  try {
-    const wonAuctions = await Auction.find({ winner: req.user.username });
-
-    res.json({ success: true, wonAuctions });
-
-  } catch (err) {
-    res.status(500).json({ success: false, msg: "Error fetching won auctions" });
-  }
-});
+router.get("/users/won-auctions", isLoggedIn, getWonAuctions);
 
 // GET /api/public/stats - Get public system stats (for home page)
-router.get("/public/stats", async (req, res) => {
-  try {
-    const totalUsers = await User.countDocuments();
-    const totalAuctions = await Auction.countDocuments();
-    const totalBids = await Bid.countDocuments();
-
-    res.json({
-      success: true,
-      stats: { totalUsers, totalAuctions, totalBids }
-    });
-
-  } catch (err) {
-    res.status(500).json({ success: false, msg: "Error fetching stats" });
-  }
-});
+router.get("/public/stats", getPublicStats);
 
 export default router;

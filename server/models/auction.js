@@ -6,27 +6,27 @@ const auctionSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
-    title: {
-      type: String,
-      required: true,
-      trim: true,
-      maxlength: 100,
-    },
-    productName: {
-      type: String,
-      required: true,
-      trim: true,
-      maxlength: 100,
-    },
-    imageUrl: {
-      type: String,
-      default: null,
-    },
-    cloudinaryPublicId: {
-      type: String,
-      default: null,
-    },
-    description: {
+  title: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 100,
+  },
+  productName: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 100,
+  },
+  imageUrl: {
+    type: String,
+    default: null,
+  },
+  cloudinaryPublicId: {
+    type: String,
+    default: null,
+  },
+  description: {
     type: String,
     trim: true,
     maxlength: 500,
@@ -37,7 +37,7 @@ const auctionSchema = new mongoose.Schema({
     default: 'Other',
     enum: [
       'Electronics',
-      'Fashion', 
+      'Fashion',
       'Home & Garden',
       'Sports',
       'Collectibles',
@@ -83,11 +83,11 @@ const auctionSchema = new mongoose.Schema({
   },
   // Online users (just usernames for socket compatibility)
   onlineUsers: [{
-    type: String, // usernames for socket events
+    type: String,
   }],
   // Joined users (persistent - users who have ever joined this auction)
   joinedUsers: [{
-    type: String, // usernames for tracking participation
+    type: String,
   }],
   // Winner (just username for MVP)
   winner: {
@@ -98,16 +98,22 @@ const auctionSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  isPrivate: {
+    type: Boolean,
+    default: false,
+  },
+  passkey: {
+    type: String,
+    default: null,
+  },
 }, {
   timestamps: true,
 });
 
-// Indexes
-// Note: roomId already has unique index from schema definition, no need to duplicate
 auctionSchema.index({ createdBy: 1 });
 auctionSchema.index({ status: 1, endTime: 1 });
-auctionSchema.index({ status: 1, createdAt: -1 }); // For listing active auctions by creation date
-auctionSchema.index({ category: 1 }); // For category filtering
-auctionSchema.index({ currentBid: 1 }); // For price filtering
+auctionSchema.index({ status: 1, createdAt: -1 });
+auctionSchema.index({ category: 1 });
+auctionSchema.index({ currentBid: 1 });
 
 export const Auction = mongoose.model("Auction", auctionSchema);

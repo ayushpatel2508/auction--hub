@@ -79,9 +79,6 @@ const userSchema = new mongoose.Schema(
 
 // Indexes for performance
 // Note: username and email already have unique indexes from schema definition
-userSchema.index({ socketId: 1 }); // Fast socket lookup
-userSchema.index({ isOnline: 1, lastSeen: -1 }); // Find online users
-userSchema.index({ currentRoom: 1 }); // Users in specific room
-userSchema.index({ "joinedRooms.roomId": 1 }); // User's room history
+
 
 export const User = mongoose.model("User", userSchema);

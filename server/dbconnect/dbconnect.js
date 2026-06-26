@@ -9,7 +9,7 @@ export const connect = async () => {
         // Prevent duplicate index warnings in production
         autoIndex: process.env.AUTO_CREATE_INDEXES === 'true' || process.env.NODE_ENV !== 'production',
         // Connection pool settings
-        maxPoolSize: 10,
+        maxPoolSize: 50,
         serverSelectionTimeoutMS: 5000,
         socketTimeoutMS: 45000,
         // Connection timeout

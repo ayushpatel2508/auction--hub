@@ -20,7 +20,6 @@ dotenv.config();
 import { Auction } from "./models/auction.js";
 import { Bid } from "./models/bid.js";
 import { User } from "./models/user.js";
-import { Presence } from "./models/presence.js";
 
 // Import routes
 import authRoutes from "./routes/auth.js";
@@ -149,14 +148,7 @@ const checkExpiredAuctions = async () => {
         );
       }
 
-      // Clean up presence (mark all as left)
-      await Presence.updateMany(
-        { roomId: endedAuction.roomId, leftAt: null },
-        {
-          status: "disconnected",
-          leftAt: new Date(),
-        }
-      );
+
 
       // Get final auction stats
       const finalStats = {
@@ -212,250 +204,52 @@ io.on("connection", (socket) => {
     try {
       const { roomId, username } = data;
 
-      // Check if user exists (no auto-creation)
       const user = await User.findOne({ username });
-
-      if (!user) {
-        return socket.emit("error", "User not found. Please register first.");
-      }
+      if (!user) return socket.emit("error", "User not found. Please register first.");
 
       const auction = await Auction.findOne({ roomId });
+      if (!auction) return socket.emit("error", "Auction not found");
 
-      if (!auction) {
-        return socket.emit("error", "Auction not found");
+      // Check Access for Private Rooms
+      if (auction.isPrivate) {
+        if (auction.createdBy !== username && !auction.joinedUsers.includes(username)) {
+          return socket.emit("error", "Private room access required");
+        }
       }
 
       // Join socket room
       socket.join(roomId);
 
-      // Clean up any existing presence records for this user in this room
-      await Presence.deleteMany({
-        username: username,
-        roomId: roomId,
-      });
+      // Check if this is the FIRST time they join
+      if (!auction.joinedUsers.includes(username)) {
+        await Auction.updateOne(
+          { roomId },
+          { $addToSet: { joinedUsers: username } }
+        );
+        
+        // Notify others
+        socket.to(roomId).emit("user-joined-notification", {
+          username: username,
+          message: `${username} joined the auction`,
+        });
+      }
 
-      // Create new presence record
-      await Presence.create({
-        username: username,
-        roomId: roomId,
-        socketId: socket.id,
-        status: "online",
-      });
-
-      // Atomic update to avoid race conditions
-      // Update both onlineUsers (temp) and joinedUsers (persistent)
-      const updatedAuction = await Auction.findOneAndUpdate(
-        { roomId },
-        {
-          $addToSet: {
-            onlineUsers: username,
-            joinedUsers: username,
-          },
-        },
-        { new: true } // Return the updated document
-      );
-
-      // Use the updated document for notifications
-      // Emit to the user who joined
       socket.emit("auction-joined", `${username} joined successfully`);
 
-      // Emit to ALL users in the room (including the joiner) - for updating the online users list
-      io.to(roomId).emit("online-users-updated", {
-        onlineUsers: updatedAuction.onlineUsers,
-        onlineUsersCount: updatedAuction.onlineUsers.length,
-      });
-
-      // Emit ONLY to OTHER users in the room (excluding the joiner) - for the join notification
-      socket.to(roomId).emit("user-joined-notification", {
-        username: username,
-        message: `${username} joined the auction`,
-      });
     } catch (err) {
       socket.emit("error", "Failed to join auction");
     }
   });
 
-  // 2. PLACE BID
-  socket.on("place-bid", async (data) => {
-    try {
-      const { roomId, username, bidAmount } = data;
-
-      // Check if user exists (no auto-creation)
-      const user = await User.findOne({ username });
-      if (!user) {
-        return socket.emit("error", "User not found. Please register first.");
-      }
-
-      // Get current auction state
-      const auction = await Auction.findOne({ roomId });
-
-      if (!auction) {
-        return socket.emit("error", "Auction not found");
-      }
-
-      if (auction.status === "ended") {
-        return socket.emit("error", "Auction has ended");
-      }
-
-      if (bidAmount <= auction.currentBid) {
-        return socket.emit("error", "Bid must be higher than current bid");
-      }
-
-      // Check if user is the creator
-      if (auction.createdBy === username) {
-        return socket.emit("error", "You cannot bid on your own auction");
-      }
-
-      // Check if the user is trying to bid consecutively (same user as highest bidder)
-      if (auction.highestBidder === username) {
-        return socket.emit("consecutive-bid-error", {
-          message:
-            "You cannot place consecutive bids. Wait for another user to bid first.",
-          currentBid: auction.currentBid,
-          highestBidder: auction.highestBidder,
-        });
-      }
-
-      // ATOMIC UPDATE - Prevents race conditions!
-      const updatedAuction = await Auction.findOneAndUpdate(
-        {
-          roomId: roomId,
-          currentBid: auction.currentBid, // Only update if this is still the current bid
-          status: "active",
-          endTime: { $gt: new Date() } // Ensure auction hasn't expired
-        },
-        {
-          $set: {
-            currentBid: bidAmount,
-            highestBidder: username
-          }
-        },
-        {
-          new: true,
-          runValidators: true
-        }
-      );
-
-      // If update failed, check why
-      if (!updatedAuction) {
-        const latestAuction = await Auction.findOne({ roomId });
-        
-        // Check if auction ended
-        if (latestAuction.status === "ended" || latestAuction.endTime <= new Date()) {
-          return socket.emit("error", "Auction has ended. Bid not accepted.");
-        }
-        
-        // Otherwise it's a bid conflict
-        return socket.emit("bid-conflict", {
-          message: "Bid conflict - another bid was placed. Please try again with a higher amount.",
-          currentBid: latestAuction?.currentBid,
-          highestBidder: latestAuction?.highestBidder
-        });
-      }
-
-      // Mark previous bids as not winning
-      await Bid.updateMany({ roomId: roomId }, { isWinning: false });
-
-      // Save bid to DB
-      await Bid.create({
-        username: username,
-        roomId: roomId,
-        amount: bidAmount,
-        socketId: socket.id,
-        isWinning: true,
-      });
-
-      // Broadcast to all users in room
-      const bidUpdateData = {
-        highestBid: bidAmount,
-        highestBidder: username,
-      };
-
-      io.to(roomId).emit("bid-update", bidUpdateData);
-    } catch (err) {
-      socket.emit("error", "Failed to place bid");
+  // DISCONNECT / LEAVE (No tracking needed)
+  socket.on("leave-auction", (data) => {
+    if(data && data.roomId) {
+      socket.leave(data.roomId);
     }
   });
-
-  // 3. LEAVE AUCTION
-  socket.on("leave-auction", async (data) => {
-    try {
-      const { roomId, username, reason } = data;
-
-      // Only process manual quits - ignore route changes and page unloads
-      if (reason === "manual_quit") {
-        // Update presence
-        await Presence.updateOne(
-          { socketId: socket.id },
-          { status: "disconnected", leftAt: new Date() }
-        );
-
-        // Get updated auction data (API already removed user from online users)
-        const auction = await Auction.findOne({ roomId });
-
-        // Check if the user who left was the creator
-        const isCreator = auction && auction.createdBy === username;
-
-        // Send different notifications based on whether user is creator or not
-        const notificationMessage = isCreator
-          ? `Auction creator ${username} has left the auction. The auction continues without them.`
-          : `${username} has left the auction`;
-
-        // Notify ONLY OTHER USERS (not the one who left) using socket.to()
-        socket.to(roomId).emit("user-quit-auction", {
-          username: username,
-          message: notificationMessage,
-          isCreator: isCreator,
-          onlineUsers: auction ? auction.onlineUsers : [],
-          onlineUsersCount: auction ? auction.onlineUsers.length : 0,
-          showAlert: true,
-        });
-
-        socket.leave(roomId);
-      } else {
-        // For route changes and page unloads, just acknowledge but don't remove from online users
-      }
-    } catch (err) {
-      // Error leaving auction
-    }
-  });
-
-  // 4. DISCONNECT
-  socket.on("disconnect", async () => {
-    try {
-      // Find the user's presence record to get username and roomId
-      const presence = await Presence.findOne({ socketId: socket.id });
-
-      if (presence && presence.status === "online") {
-        const { username, roomId } = presence;
-
-        // Update presence
-        await Presence.updateOne(
-          { socketId: socket.id },
-          { status: "disconnected", leftAt: new Date() }
-        );
-
-        // Remove from auction online users
-        await Auction.updateOne(
-          { roomId: roomId },
-          { $pull: { onlineUsers: username } }
-        );
-
-        // Get updated auction data
-        const auction = await Auction.findOne({ roomId });
-
-        // Notify ONLY OTHER USERS (not the one who disconnected) using socket.to()
-        socket.to(roomId).emit("user-quit-auction", {
-          username: username,
-          message: `${username} has disconnected from the auction`,
-          onlineUsers: auction ? auction.onlineUsers : [],
-          onlineUsersCount: auction ? auction.onlineUsers.length : 0,
-          showAlert: true,
-        });
-      }
-    } catch (err) {
-      // Error on disconnect
-    }
+  
+  socket.on("disconnect", () => {
+    // No backend state cleanup needed anymore!
   });
 });
 
