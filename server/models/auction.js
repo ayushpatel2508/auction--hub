@@ -114,6 +114,5 @@ auctionSchema.index({ createdBy: 1 });
 auctionSchema.index({ status: 1, endTime: 1 });
 auctionSchema.index({ status: 1, createdAt: -1 });
 auctionSchema.index({ category: 1 });
-auctionSchema.index({ currentBid: 1 });
 
 export const Auction = mongoose.model("Auction", auctionSchema);
