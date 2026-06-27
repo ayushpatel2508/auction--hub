@@ -77,8 +77,6 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Indexes for performance
-// Note: username and email already have unique indexes from schema definition
 
 
 export const User = mongoose.model("User", userSchema);
