@@ -25,6 +25,8 @@ const AuctionCard = ({ auction, onWatchlistToggle, isWatched = false }) => {
     const { isAuthenticated } = useAuth()
     const [timeRemaining, setTimeRemaining] = useState(formatTimeRemaining(auction.endTime))
     const status = getAuctionStatus(auction)
+    const creatorName = auction.createdBy?.username || auction.createdBy;
+    const highestBidderName = auction.highestBidder?.username || auction.highestBidder;
 
     useEffect(() => {
         if (status.status === 'ended') return
@@ -116,19 +118,19 @@ const AuctionCard = ({ auction, onWatchlistToggle, isWatched = false }) => {
                                 {formatCurrency(auction.currentBid)}
                             </p>
                         </div>
-                        {(status.status === 'ended' || auction.highestBidder) && (
+                        {(status.status === 'ended' || highestBidderName) && (
                             <div className="text-right">
                                 <p className="text-xs text-muted-foreground">
                                     {status.status === 'ended' ? 'Winner' : 'Leading Bidder'}
                                 </p>
-                                {auction.highestBidder ? (
+                                {highestBidderName ? (
                                     <div className="flex items-center space-x-1 justify-end">
                                         <Avatar className="h-5 w-5">
                                             <AvatarFallback className="text-xs">
-                                                {getInitials(auction.highestBidder)}
+                                                {getInitials(highestBidderName)}
                                             </AvatarFallback>
                                         </Avatar>
-                                        <span className="text-sm font-medium">{auction.highestBidder}</span>
+                                        <span className="text-sm font-medium">{highestBidderName}</span>
                                     </div>
                                 ) : (
                                     <span className="text-sm font-medium text-muted-foreground">N/A</span>
@@ -149,7 +151,7 @@ const AuctionCard = ({ auction, onWatchlistToggle, isWatched = false }) => {
                     <div className="flex items-center space-x-2">
                         <User className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm text-muted-foreground">
-                            by <span className="font-medium">{auction.createdBy}</span>
+                            by <span className="font-medium">{creatorName}</span>
                         </span>
                     </div>
                 </CardContent>

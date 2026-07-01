@@ -364,6 +364,9 @@ const AuctionDetail = () => {
     }
 
     const status = getAuctionStatus(auction)
+    const creatorName = auction.createdBy?.username || auction.createdBy;
+    const highestBidderName = auction.highestBidder?.username || auction.highestBidder;
+    const winnerName = auction.winner?.username || auction.winner;
 
     return (
         <div className="space-y-6">
@@ -375,7 +378,7 @@ const AuctionDetail = () => {
                 </Button>
 
                 <div className="flex items-center space-x-2">
-                    {auction.createdBy !== user && auction.status !== 'ended' && (
+                    {creatorName !== user && auction.status !== 'ended' && (
                         <Button 
                             variant="destructive" 
                             size="sm" 
@@ -493,11 +496,11 @@ const AuctionDetail = () => {
                             <div className="flex items-center space-x-3 p-4 bg-muted/50 rounded-lg">
                                 <Avatar>
                                     <AvatarFallback>
-                                        {getInitials(auction.createdBy)}
+                                        {getInitials(creatorName)}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div>
-                                    <p className="font-semibold">{auction.createdBy}</p>
+                                    <p className="font-semibold">{creatorName}</p>
                                     <p className="text-sm text-muted-foreground">Auction Creator</p>
                                 </div>
                             </div>
@@ -520,7 +523,7 @@ const AuctionDetail = () => {
                     <BidHistory
                         bids={bidHistory}
                         currentUser={user}
-                        highestBidder={auction.highestBidder}
+                        highestBidder={highestBidderName}
                         auctionStatus={auction.status}
                     />
             </div>
@@ -585,16 +588,19 @@ const AuctionDetail = () => {
                     </DialogHeader>
                     <div className="max-h-[300px] overflow-y-auto space-y-4 py-4">
                         {auction.joinedUsers && auction.joinedUsers.length > 0 ? (
-                            auction.joinedUsers.map((participantUser, index) => (
+                            auction.joinedUsers.map((participantUser, index) => {
+                                const pName = participantUser?.username || participantUser;
+                                return (
                                 <div key={index} className="flex items-center space-x-3 p-2 rounded-lg bg-muted/30">
                                     <Avatar className="h-8 w-8">
                                         <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                                            {getInitials(participantUser)}
+                                            {getInitials(pName)}
                                         </AvatarFallback>
                                     </Avatar>
-                                    <span className="font-medium">{participantUser}</span>
+                                    <span className="font-medium">{pName}</span>
                                 </div>
-                            ))
+                                );
+                            })
                         ) : (
                             <div className="text-center py-6 text-muted-foreground">
                                 <Users className="h-8 w-8 mx-auto mb-2 opacity-20" />

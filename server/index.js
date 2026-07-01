@@ -129,7 +129,7 @@ const checkExpiredAuctions = async () => {
           }
         },
         { new: true }
-      );
+      ).populate('highestBidder', 'username').populate('createdBy', 'username');
 
       // If update failed, auction was already ended or got a last-second bid
       if (!endedAuction) {
@@ -140,8 +140,8 @@ const checkExpiredAuctions = async () => {
       if (endedAuction.highestBidder) {
         await Bid.updateOne(
           {
-            roomId: endedAuction.roomId,
-            username: endedAuction.highestBidder,
+            auction: endedAuction._id,
+            user: endedAuction.highestBidder._id,
             amount: endedAuction.currentBid,
           },
           { isWinning: true }
@@ -150,13 +150,16 @@ const checkExpiredAuctions = async () => {
 
 
 
+      const winnerName = endedAuction.highestBidder ? endedAuction.highestBidder.username : null;
+      const creatorName = endedAuction.createdBy ? endedAuction.createdBy.username : null;
+
       // Get final auction stats
       const finalStats = {
         title: endedAuction.title,
-        createdBy: endedAuction.createdBy,
-        winner: endedAuction.winner,
+        createdBy: creatorName,
+        winner: winnerName,
         finalPrice: endedAuction.finalPrice,
-        totalBids: await Bid.countDocuments({ roomId: endedAuction.roomId }),
+        totalBids: await Bid.countDocuments({ auction: endedAuction._id }),
         startingPrice: endedAuction.startingPrice,
         endedAt: new Date(),
         endedBy: "timer",
@@ -165,7 +168,7 @@ const checkExpiredAuctions = async () => {
       // Notify all users in the room that auction ended
       io.to(endedAuction.roomId).emit("auction-ended", {
         roomId: endedAuction.roomId,
-        winner: endedAuction.winner,
+        winner: winnerName,
         finalPrice: endedAuction.finalPrice,
         message: "Auction has ended due to time expiry",
         finalStats: finalStats,
@@ -212,7 +215,7 @@ io.on("connection", (socket) => {
 
       // Check Access for Private Rooms
       if (auction.isPrivate) {
-        if (auction.createdBy !== username && !auction.joinedUsers.includes(username)) {
+        if (!auction.createdBy.equals(user._id) && !auction.joinedUsers.some(id => id.equals(user._id))) {
           return socket.emit("error", "Private room access required");
         }
       }
@@ -221,10 +224,10 @@ io.on("connection", (socket) => {
       socket.join(roomId);
 
       // Check if this is the FIRST time they join
-      if (!auction.joinedUsers.includes(username)) {
+      if (!auction.joinedUsers.some(id => id.equals(user._id))) {
         await Auction.updateOne(
           { roomId },
-          { $addToSet: { joinedUsers: username } }
+          { $addToSet: { joinedUsers: user._id } }
         );
         
         // Notify others

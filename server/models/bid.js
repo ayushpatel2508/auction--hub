@@ -1,14 +1,14 @@
 import mongoose from "mongoose";
 
 const bidSchema = new mongoose.Schema({
-  // Username for socket events
-  username: {
-    type: String,
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
     required: true,
   },
-  // Room ID for socket events
-  roomId: {
-    type: String,
+  auction: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Auction",
     required: true,
   },
   amount: {
@@ -24,18 +24,14 @@ const bidSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
-  socketId: {
-    type: String,
-    required: false, // Make optional for HTTP requests
-    default: null,
-  },
 }, {
   timestamps: true,
 });
 
 // Indexes for fast queries
-bidSchema.index({ roomId: 1, placedAt: -1 });  // Bid history by roomId (most recent first)
-bidSchema.index({ username: 1, placedAt: -1 }); // User's bid history (most recent first)
+bidSchema.index({ auction: 1, placedAt: -1 });  // Bid history by auction (most recent first)
+bidSchema.index({ auction: 1, amount: -1 });    // Highest bid for this auction
+bidSchema.index({ user: 1, placedAt: -1 }); // User's bid history (most recent first)
 
 
 export const Bid = mongoose.model("Bid", bidSchema);

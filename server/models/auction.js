@@ -57,14 +57,16 @@ const auctionSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
-  // Creator (just username for MVP)
+  // Creator
   createdBy: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
     required: true,
   },
-  // Highest bidder (just username for MVP)
+  // Highest bidder
   highestBidder: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
     default: null,
   },
   status: {
@@ -81,17 +83,20 @@ const auctionSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
-  // Online users (just usernames for socket compatibility)
+  // Online users
   onlineUsers: [{
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
   }],
   // Joined users (persistent - users who have ever joined this auction)
   joinedUsers: [{
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
   }],
-  // Winner (just username for MVP)
+  // Winner
   winner: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
     default: null,
   },
   finalPrice: {

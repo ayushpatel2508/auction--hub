@@ -27,7 +27,7 @@ export const getWatchlist = async (req, res) => {
     }
 
     // Find all auctions that are in the user's watchlist
-    const auctions = await Auction.find({ roomId: { $in: user.watchlist } });
+    const auctions = await Auction.find({ _id: { $in: user.watchlist } });
 
     res.json({ success: true, auctions });
   } catch (err) {
@@ -51,12 +51,18 @@ export const toggleWatchlist = async (req, res) => {
       user.watchlist = [];
     }
 
-    const index = user.watchlist.indexOf(roomId);
+    const auction = await Auction.findOne({ roomId });
+    if (!auction) {
+      return res.status(404).json({ success: false, msg: "Auction not found" });
+    }
+
+    const auctionId = auction._id;
+    const index = user.watchlist.findIndex(id => id.equals(auctionId));
     let isAdded = false;
 
     if (index === -1) {
       // Add to watchlist
-      user.watchlist.push(roomId);
+      user.watchlist.push(auctionId);
       isAdded = true;
     } else {
       // Remove from watchlist
@@ -76,7 +82,7 @@ export const toggleWatchlist = async (req, res) => {
 // GET /api/users/my-auctions - Get user's created auctions
 export const getMyAuctions = async (req, res) => {
   try {
-    const auctions = await Auction.find({ createdBy: req.user.username });
+    const auctions = await Auction.find({ createdBy: req.user._id });
 
     res.json({ success: true, auctions });
 
@@ -94,8 +100,8 @@ export const getJoinedAuctions = async (req, res) => {
 
     // Find auctions where user is in joinedUsers array (persistent participation)
     const joinedAuctions = await Auction.find({
-      joinedUsers: req.user.username,  // User is in joinedUsers array
-      createdBy: { $ne: req.user.username }, // Exclude auctions created by user
+      joinedUsers: req.user._id,  // User is in joinedUsers array
+      createdBy: { $ne: req.user._id }, // Exclude auctions created by user
       $or: [
         { status: "active" }, // Include all active auctions
         { 
@@ -115,7 +121,8 @@ export const getJoinedAuctions = async (req, res) => {
 // GET /api/users/my-bids - Get user's bid history (latest 10)
 export const getMyBids = async (req, res) => {
   try {
-    const bids = await Bid.find({ username: req.user.username })
+    const bids = await Bid.find({ user: req.user._id })
+      .populate('auction')
       .sort({ placedAt: -1 })
       .limit(10);
 
@@ -129,7 +136,7 @@ export const getMyBids = async (req, res) => {
 // GET /api/users/won-auctions - Get auctions user won
 export const getWonAuctions = async (req, res) => {
   try {
-    const wonAuctions = await Auction.find({ winner: req.user.username });
+    const wonAuctions = await Auction.find({ winner: req.user._id });
 
     res.json({ success: true, wonAuctions });
 

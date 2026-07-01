@@ -23,6 +23,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       minlength: 6,
+      select: false,
     },
     // Socket ID for real-time tracking
     socketId: {
@@ -36,7 +37,8 @@ const userSchema = new mongoose.Schema(
     },
     // Current room they're in (if any)
     currentRoom: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Auction",
       default: null,
     },
     // Last activity timestamp
@@ -53,6 +55,7 @@ const userSchema = new mongoose.Schema(
     refreshToken: {
       type: String,
       default: null,
+      select: false,
     },
     // Account verification
     isVerified: {
@@ -62,14 +65,18 @@ const userSchema = new mongoose.Schema(
     // Rooms they've joined (history)
     joinedRooms: [
       {
-        roomId: String,
+        auction: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Auction",
+        },
         joinedAt: Date,
         leftAt: Date,
       },
     ],
-    // Watchlist (Array of auction roomIds)
+    // Watchlist (Array of auction references)
     watchlist: [{
-      type: String
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Auction"
     }],
   },
   {

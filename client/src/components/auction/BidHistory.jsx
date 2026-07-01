@@ -35,12 +35,13 @@ const BidHistory = ({ bids = [], currentUser, highestBidder, auctionStatus }) =>
             </CardHeader>
             <CardContent className="space-y-3 max-h-96 overflow-y-auto">
                 {bids.map((bid, index) => {
-                    const isWinning = bid.username === highestBidder && index === 0
-                    const isCurrentUser = bid.username === currentUser
+                    const bidName = bid.user?.username || bid.username;
+                    const isWinning = bidName === highestBidder && index === 0
+                    const isCurrentUser = bidName === currentUser
 
                     return (
                         <div
-                            key={`${bid.username}-${bid.amount}-${bid.placedAt}`}
+                            key={`${bidName}-${bid.amount}-${bid.placedAt}`}
                             className={`flex items-center justify-between p-3 rounded-lg border ${isWinning
                                 ? 'bg-green-50 border-green-200'
                                 : isCurrentUser
@@ -52,7 +53,7 @@ const BidHistory = ({ bids = [], currentUser, highestBidder, auctionStatus }) =>
                                 <div className="relative">
                                     <Avatar className="h-8 w-8">
                                         <AvatarFallback className="text-xs">
-                                            {getInitials(bid.username)}
+                                            {getInitials(bidName)}
                                         </AvatarFallback>
                                     </Avatar>
                                     {isWinning && (
@@ -63,7 +64,7 @@ const BidHistory = ({ bids = [], currentUser, highestBidder, auctionStatus }) =>
                                 <div>
                                     <div className="flex items-center space-x-2">
                                         <span className="font-medium text-sm">
-                                            {bid.username}
+                                            {bidName}
                                             {isCurrentUser && (
                                                 <span className="text-xs text-muted-foreground ml-1">(You)</span>
                                             )}

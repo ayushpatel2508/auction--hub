@@ -65,7 +65,7 @@ export const createAuction = async (req, res) => {
       currentBid: Number(startingPrice),
       duration: Number(duration),
       endTime: new Date(Date.now() + duration * 60 * 1000),
-      createdBy: req.user.username,
+      createdBy: req.user._id,
       status: "active",
       isPrivate: isPrivate === 'true' || isPrivate === true,
       passkey: passkey
@@ -89,7 +89,11 @@ export const createAuction = async (req, res) => {
 export const getAllAuctions = async (req, res) => {
   try {
     // Get all auctions first, omitting passkey for security
-    const allAuctions = await Auction.find({}).select('-passkey').sort({ createdAt: -1 });
+    const allAuctions = await Auction.find({})
+      .select('-passkey')
+      .populate('createdBy', 'username')
+      .populate('highestBidder', 'username')
+      .sort({ createdAt: -1 });
 
     // Get query parameters
     const category = req.query.category;
@@ -152,7 +156,10 @@ export const getSingleAuction = async (req, res) => {
   try {
     const { roomId } = req.params;
 
-    const auction = await Auction.findOne({ roomId });
+    const auction = await Auction.findOne({ roomId })
+      .populate('createdBy', 'username')
+      .populate('highestBidder', 'username')
+      .populate('joinedUsers', 'username');
 
     if (!auction) {
       return res.status(404).json({
@@ -172,8 +179,8 @@ export const getSingleAuction = async (req, res) => {
         } catch (e) { }
       }
 
-      const isCreator = auction.createdBy === username;
-      const hasJoined = auction.joinedUsers.includes(username);
+      const isCreator = auction.createdBy && auction.createdBy.username === username;
+      const hasJoined = auction.joinedUsers.some(u => u.username === username);
 
       if (!isCreator && !hasJoined) {
         return res.status(403).json({
@@ -187,7 +194,7 @@ export const getSingleAuction = async (req, res) => {
     // Strip passkey before sending
     auction.passkey = undefined;
 
-    const bids = await Bid.find({ roomId }).sort({ placedAt: -1 }).limit(50);
+    const bids = await Bid.find({ auction: auction._id }).populate('user', 'username').sort({ placedAt: -1 }).limit(50);
 
     res.json({
       success: true,
@@ -223,7 +230,7 @@ export const getBidHistory = async (req, res) => {
     }
 
     // Get bid history sorted by most recent first
-    const bids = await Bid.find({ roomId }).sort({ placedAt: -1 }).limit(50);
+    const bids = await Bid.find({ auction: auction._id }).populate('user', 'username').sort({ placedAt: -1 }).limit(50);
 
     res.json(bids);
   } catch (err) {
@@ -239,6 +246,7 @@ export const getBidHistory = async (req, res) => {
 export const quitAuction = async (req, res, io) => {
   try {
     const { roomId } = req.params;
+    const userId = req.user._id;
     const username = req.user.username;
 
     const auction = await Auction.findOne({ roomId });
@@ -250,21 +258,21 @@ export const quitAuction = async (req, res, io) => {
       });
     }
 
-    const isCreator = auction.createdBy === username;
+    const isCreator = auction.createdBy.equals(userId);
 
     // Remove user from joinedUsers
-    auction.joinedUsers = auction.joinedUsers.filter(user => user !== username);
+    auction.joinedUsers = auction.joinedUsers.filter(id => !id.equals(userId));
 
     // BID ROLLBACK PROTOCOL
     // 1. Delete all bids by this user in this room
-    await Bid.deleteMany({ roomId: roomId, username: username });
+    await Bid.deleteMany({ auction: auction._id, user: userId });
 
     // 2. Find the highest remaining bid
-    const highestRemainingBid = await Bid.findOne({ roomId: roomId }).sort({ amount: -1 });
+    const highestRemainingBid = await Bid.findOne({ auction: auction._id }).sort({ amount: -1 }).populate('user', 'username');
 
     if (highestRemainingBid) {
       auction.currentBid = highestRemainingBid.amount;
-      auction.highestBidder = highestRemainingBid.username;
+      auction.highestBidder = highestRemainingBid.user._id;
       // Mark it as winning
       await Bid.updateOne({ _id: highestRemainingBid._id }, { isWinning: true });
     } else {
@@ -326,7 +334,7 @@ export const deleteAuction = async (req, res, io) => {
   try {
     const { roomId } = req.params;
 
-    const auction = await Auction.findOne({ roomId });
+    const auction = await Auction.findOne({ roomId }).populate('createdBy', 'username').populate('highestBidder', 'username');
 
     if (!auction) {
       return res.status(404).json({
@@ -336,7 +344,7 @@ export const deleteAuction = async (req, res, io) => {
     }
 
     // Check if user is the creator
-    if (auction.createdBy !== req.user.username) {
+    if (!auction.createdBy.equals(req.user._id)) {
       return res.status(403).json({
         success: false,
         msg: "Only auction creator can delete",
@@ -356,10 +364,10 @@ export const deleteAuction = async (req, res, io) => {
     // Get final auction stats before deletion
     const finalStats = {
       title: auction.title,
-      createdBy: auction.createdBy,
+      createdBy: auction.createdBy ? auction.createdBy.username : null,
       highestBid: auction.currentBid,
-      highestBidder: auction.highestBidder,
-      totalBids: await Bid.countDocuments({ roomId }),
+      highestBidder: auction.highestBidder ? auction.highestBidder.username : null,
+      totalBids: await Bid.countDocuments({ auction: auction._id }),
       startingPrice: auction.startingPrice,
       deletedAt: new Date()
     };
@@ -373,7 +381,7 @@ export const deleteAuction = async (req, res, io) => {
     });
 
     // Delete related data
-    await Bid.deleteMany({ roomId });
+    await Bid.deleteMany({ auction: auction._id });
     await Auction.deleteOne({ roomId });
 
     res.json({
@@ -393,22 +401,22 @@ export const deleteAuction = async (req, res, io) => {
 // GET USER'S AUCTIONS
 export const getUserAuctions = async (req, res) => {
   try {
-    const username = req.user.username;
+    const userId = req.user._id;
 
     // SINGLE DB CALL: Fetch all auctions where the user is either the creator OR in the joinedUsers array
     const userAuctions = await Auction.find({
       $or: [
-        { createdBy: username },
-        { joinedUsers: username }
+        { createdBy: userId },
+        { joinedUsers: userId }
       ]
-    }).select("-passkey").sort({ createdAt: -1 });
+    }).select("-passkey").populate('createdBy', 'username').populate('highestBidder', 'username').sort({ createdAt: -1 });
 
     // Classify the results in memory
     const createdAuctions = [];
     const joinedAuctions = [];
 
     userAuctions.forEach(auction => {
-      if (auction.createdBy === username) {
+      if (auction.createdBy && auction.createdBy._id.equals(userId)) {
         createdAuctions.push(auction);
       } else {
         joinedAuctions.push(auction);
@@ -437,21 +445,13 @@ export const placeBid = async (req, res, io) => {
   try {
     const { roomId } = req.params;
     const { amount } = req.body;
+    const userId = req.user._id;
     const username = req.user.username;
 
     if (!amount) {
       return res.status(400).json({
         success: false,
         msg: "Bid amount is required",
-      });
-    }
-
-    // Check if user exists
-    const user = await User.findOne({ username });
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        msg: "User not found",
       });
     }
 
@@ -467,7 +467,7 @@ export const placeBid = async (req, res, io) => {
 
     // Access Control Check for Private Rooms
     if (auction.isPrivate) {
-      if (auction.createdBy !== username && !auction.joinedUsers.includes(username)) {
+      if (!auction.createdBy.equals(userId) && !auction.joinedUsers.some(id => id.equals(userId))) {
         return res.status(403).json({ success: false, msg: "Private room access required" });
       }
     }
@@ -487,7 +487,7 @@ export const placeBid = async (req, res, io) => {
     }
 
     // Check if user is the creator
-    if (auction.createdBy === username) {
+    if (auction.createdBy.equals(userId)) {
       return res.status(400).json({
         success: false,
         msg: "You cannot bid on your own auction",
@@ -495,7 +495,7 @@ export const placeBid = async (req, res, io) => {
     }
 
     // Check if the user is trying to bid consecutively
-    if (auction.highestBidder === username) {
+    if (auction.highestBidder && auction.highestBidder.equals(userId)) {
       return res.status(400).json({
         success: false,
         msg: "You cannot place consecutive bids. Wait for another user to bid first.",
@@ -514,7 +514,7 @@ export const placeBid = async (req, res, io) => {
       {
         $set: {
           currentBid: amount,
-          highestBidder: username
+          highestBidder: userId
         }
       },
       {
@@ -544,15 +544,14 @@ export const placeBid = async (req, res, io) => {
     }
 
     // Mark previous bids as not winning
-    await Bid.updateMany({ roomId: roomId }, { isWinning: false });
+    await Bid.updateMany({ auction: auction._id }, { isWinning: false });
 
     // Save bid to DB
     const newBid = await Bid.create({
-      username: username,
-      roomId: roomId,
+      user: userId,
+      auction: auction._id,
       amount: amount,
       isWinning: true,
-      socketId: 'http-request', // Mark as HTTP request
     });
 
     // Broadcast to all users in room via Socket.IO
@@ -597,7 +596,7 @@ export const endAuctionManually = async (req, res, io) => {
   try {
     const { roomId } = req.params;
 
-    const auction = await Auction.findOne({ roomId });
+    const auction = await Auction.findOne({ roomId }).populate('createdBy', 'username').populate('highestBidder', 'username');
 
     if (!auction) {
       return res.status(404).json({
@@ -607,7 +606,7 @@ export const endAuctionManually = async (req, res, io) => {
     }
 
     // Check if user is the creator
-    if (auction.createdBy !== req.user.username) {
+    if (!auction.createdBy.equals(req.user._id)) {
       return res.status(403).json({
         success: false,
         msg: "Only auction creator can end auction",
@@ -632,21 +631,24 @@ export const endAuctionManually = async (req, res, io) => {
     if (auction.highestBidder) {
       await Bid.updateOne(
         {
-          roomId: roomId,
-          username: auction.highestBidder,
+          auction: auction._id,
+          user: auction.highestBidder._id,
           amount: auction.currentBid,
         },
         { isWinning: true }
       );
     }
 
+    const winnerName = auction.winner ? auction.winner.username : null;
+    const creatorName = auction.createdBy ? auction.createdBy.username : null;
+
     // Get final auction stats
     const finalStats = {
       title: auction.title,
-      createdBy: auction.createdBy,
-      winner: auction.winner,
+      createdBy: creatorName,
+      winner: winnerName,
       finalPrice: auction.finalPrice,
-      totalBids: await Bid.countDocuments({ roomId }),
+      totalBids: await Bid.countDocuments({ auction: auction._id }),
       startingPrice: auction.startingPrice,
       endedAt: new Date(),
       endedBy: "creator"
@@ -655,7 +657,7 @@ export const endAuctionManually = async (req, res, io) => {
     // Notify all users in the room that auction ended
     io.to(roomId).emit("auction-ended", {
       roomId: roomId,
-      winner: auction.winner,
+      winner: winnerName,
       finalPrice: auction.finalPrice,
       message: "Auction has been ended by the creator",
       finalStats: finalStats,
@@ -689,7 +691,7 @@ export const unlockPrivateRoom = async (req, res) => {
   try {
     const { roomId } = req.params;
     const { passkey } = req.body;
-    const username = req.user.username;
+    const userId = req.user._id;
 
     const auction = await Auction.findOne({ roomId });
     if (!auction) return res.status(404).json({ success: false, msg: "Auction not found" });
@@ -704,7 +706,7 @@ export const unlockPrivateRoom = async (req, res) => {
     // Add user to joinedUsers
     await Auction.updateOne(
       { roomId },
-      { $addToSet: { joinedUsers: username } }
+      { $addToSet: { joinedUsers: userId } }
     );
 
     res.json({ success: true, msg: "Room unlocked successfully" });

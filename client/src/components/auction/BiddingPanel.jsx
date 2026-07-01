@@ -29,8 +29,13 @@ const BiddingPanel = ({
 
     const minBid = getMinimumBid(auction.currentBid)
     const isAuctionEnded = auction.status === 'ended'
-    const isCreator = auction.createdBy === currentUser
-    const isHighestBidder = auction.highestBidder === currentUser
+    
+    const creatorName = auction.createdBy?.username || auction.createdBy;
+    const highestBidderName = auction.highestBidder?.username || auction.highestBidder;
+    const winnerName = auction.winner?.username || auction.winner;
+
+    const isCreator = creatorName === currentUser
+    const isHighestBidder = highestBidderName === currentUser
 
     const quickBidAmounts = [
         minBid,
@@ -94,9 +99,9 @@ const BiddingPanel = ({
                         <p className="text-lg font-semibold mb-2">
                             Final Price: {formatCurrency(auction.finalPrice || auction.currentBid)}
                         </p>
-                        {auction.winner ? (
+                        {winnerName ? (
                             <p className="text-muted-foreground">
-                                Won by <span className="font-medium">{auction.winner}</span>
+                                Won by <span className="font-medium">{winnerName}</span>
                             </p>
                         ) : (
                             <p className="text-muted-foreground">No winner</p>
