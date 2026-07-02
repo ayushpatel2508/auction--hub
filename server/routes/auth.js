@@ -4,6 +4,7 @@ import { register, login, logout, verifyToken } from "../controllers/authControl
 
 const router = express.Router();
 
+
 // 1. REGISTER
 router.post("/register", register);
 
