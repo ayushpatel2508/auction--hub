@@ -8,7 +8,6 @@ import { Avatar, AvatarFallback } from '../components/ui/avatar'
 import AuctionCard from '../components/auction/AuctionCard'
 import { useAuth } from '../contexts/AuthContext'
 import { useModal } from '../contexts/ModalContext'
-import { useToast } from '../hooks/useToast'
 import { userAPI } from '../lib/api'
 import {
     formatCurrency,
@@ -33,7 +32,6 @@ import {
 
 const Dashboard = () => {
     const { user } = useAuth()
-    const { toast } = useToast()
     const { openCreateAuction } = useModal()
 
     const [activeTab, setActiveTab] = useState('overview')
@@ -74,7 +72,6 @@ const Dashboard = () => {
             })
         } catch (error) {
             console.error('Error loading dashboard data:', error)
-            toast.error('Error', 'Failed to load dashboard data')
         } finally {
             setLoading(false)
         }

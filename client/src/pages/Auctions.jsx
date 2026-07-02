@@ -7,7 +7,6 @@ import { Badge } from '../components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import AuctionCard from '../components/auction/AuctionCard'
 import { auctionAPI, userAPI } from '../lib/api'
-import { useToast } from '../hooks/useToast'
 import { useAuth } from '../contexts/AuthContext'
 import { debounce, AUCTION_CATEGORIES, SORT_OPTIONS } from '../lib/utils'
 import {
@@ -19,7 +18,6 @@ import {
 
 const Auctions = () => {
     const [searchParams, setSearchParams] = useSearchParams()
-    const { toast } = useToast()
     const { isAuthenticated } = useAuth()
 
     const [auctions, setAuctions] = useState([])
@@ -91,7 +89,6 @@ const Auctions = () => {
             }
         } catch (error) {
             console.error('Error loading data:', error)
-            toast.error('Error', 'Failed to load auctions. Please try again.')
         } finally {
             setLoading(false)
         }
@@ -151,7 +148,6 @@ const Auctions = () => {
 
     const handleWatchlistToggle = async (roomId) => {
         if (!isAuthenticated) {
-            toast.error('Please login', 'You need to be logged in to modify your watchlist')
             return
         }
 
@@ -163,10 +159,9 @@ const Auctions = () => {
                         ? [...prev, roomId] 
                         : prev.filter(id => id !== roomId)
                 )
-                toast.success(response.isAdded ? 'Added to watchlist' : 'Removed from watchlist')
             }
         } catch (error) {
-            toast.error('Error', 'Failed to update watchlist')
+            console.error('Error toggling watchlist:', error)
         }
     }
 

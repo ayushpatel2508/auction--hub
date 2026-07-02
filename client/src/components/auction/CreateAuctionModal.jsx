@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog'
 import { useAuth } from '../../contexts/AuthContext'
 import { useModal } from '../../contexts/ModalContext'
-import { useToast } from '../../hooks/useToast'
 import { auctionAPI } from '../../lib/api'
 import { AUCTION_CATEGORIES } from '../../lib/utils'
 import {
@@ -26,7 +25,6 @@ import {
 const CreateAuctionModal = () => {
     const navigate = useNavigate()
     const { user } = useAuth()
-    const { toast } = useToast()
     const { isCreateAuctionOpen, closeCreateAuction } = useModal()
 
     const [formData, setFormData] = useState({
@@ -80,12 +78,12 @@ const CreateAuctionModal = () => {
         const file = e.target.files[0]
         if (file) {
             if (!file.type.startsWith('image/')) {
-                toast.error('Invalid file type', 'Please select an image file')
+                console.error('Invalid file type', 'Please select an image file')
                 return
             }
 
             if (file.size > 5 * 1024 * 1024) {
-                toast.error('File too large', 'Please select an image smaller than 5MB')
+                console.error('File too large', 'Please select an image smaller than 5MB')
                 return
             }
 
@@ -165,7 +163,7 @@ const CreateAuctionModal = () => {
             const response = await auctionAPI.create(submitData)
 
             if (response.success) {
-                toast.success('Auction Created!', 'Your auction is now live and accepting bids.')
+                console.log('Auction Created!', 'Your auction is now live and accepting bids.')
                 if (response.auction.passkey) {
                     setCreatedPasskey(response.auction.passkey)
                     setCreatedRoomId(response.auction.roomId)
@@ -177,9 +175,9 @@ const CreateAuctionModal = () => {
         } catch (error) {
             console.error('Error creating auction:', error)
             if (error.message.includes('upload image')) {
-                toast.error('Image Upload Failed', 'Please try uploading a different image or try again.')
+                console.error('Image Upload Failed', 'Please try uploading a different image or try again.')
             } else {
-                toast.error('Failed to create auction', error.message || 'Please try again.')
+                console.error('Failed to create auction', error.message || 'Please try again.')
             }
         } finally {
             setLoading(false)
@@ -239,7 +237,7 @@ const CreateAuctionModal = () => {
                                     size="icon"
                                     onClick={() => {
                                         navigator.clipboard.writeText(createdPasskey)
-                                        toast.success('Copied to clipboard!')
+                                        console.log('Copied to clipboard!')
                                     }}
                                 >
                                     <Copy className="h-4 w-4" />

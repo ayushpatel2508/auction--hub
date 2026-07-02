@@ -4,7 +4,6 @@ import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card'
 import { useAuth } from '../contexts/AuthContext'
-import { useToast } from '../hooks/useToast'
 import { Gavel, Mail, Lock, User, Eye, EyeOff, CheckCircle } from 'lucide-react'
 
 import { authAPI } from '../lib/api'
@@ -12,7 +11,6 @@ import { authAPI } from '../lib/api'
 const Register = () => {
     const navigate = useNavigate()
     const { login, isAuthenticated } = useAuth()
-    const { toast } = useToast()
 
     const [formData, setFormData] = useState({
         username: '',
@@ -97,8 +95,6 @@ const Register = () => {
                     // Verify the browser actually saved the cookie (catches Incognito blocking)
                     await authAPI.verifyAuth()
                     
-                    toast.success('Account Created!', 'Welcome to AuctionHub! You can now start bidding.')
-
                     // Login the user immediately
                     login(result.username)
 
@@ -107,12 +103,12 @@ const Register = () => {
                         navigate('/', { replace: true })
                     }, 100)
                 } catch (verifyError) {
-                    toast.error('Cookies Blocked', 'Account created, but your browser blocked the login cookie. If you are using Incognito Mode, please use a normal window to log in.')
+                    console.error('Cookies blocked:', verifyError)
                     await authAPI.logout().catch(() => {})
                 }
             }
         } catch (error) {
-            toast.error('Registration Failed', error.response?.data?.msg || error.message || 'Please try again with different credentials.')
+            setErrors({ email: error.response?.data?.msg || error.message || 'Please try again with different credentials.' })
         } finally {
             setLoading(false)
         }

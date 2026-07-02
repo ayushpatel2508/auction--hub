@@ -68,7 +68,7 @@ const Home = () => {
     }
 
     const handleWatchlistToggle = async (roomId) => {
-        if (!isAuthenticated) return // Should probably redirect to login or show toast
+        if (!isAuthenticated) return // Should probably redirect to login
 
         try {
             const response = await userAPI.toggleWatchlist(roomId)

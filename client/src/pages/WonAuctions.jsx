@@ -6,11 +6,9 @@ import { Button } from '../components/ui/button'
 import AuctionCard from '../components/auction/AuctionCard'
 import { userAPI } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
-import { useToast } from '../hooks/useToast'
 
 const WonAuctions = () => {
     const { isAuthenticated } = useAuth()
-    const { toast } = useToast()
     const [wonAuctions, setWonAuctions] = useState([])
     const [watchlist, setWatchlist] = useState([])
     const [loading, setLoading] = useState(true)
@@ -38,7 +36,6 @@ const WonAuctions = () => {
             }
         } catch (error) {
             console.error('Error loading won auctions:', error)
-            toast.error('Failed to load your won auctions')
         } finally {
             setLoading(false)
         }

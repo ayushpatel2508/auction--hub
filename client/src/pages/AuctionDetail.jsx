@@ -9,7 +9,6 @@ import BiddingPanel from '../components/auction/BiddingPanel'
 import BidHistory from '../components/auction/BidHistory'
 import { useSocket } from '../hooks/useSocket'
 import { useAuth } from '../contexts/AuthContext'
-import { useToast } from '../hooks/useToast'
 import { auctionAPI, userAPI } from '../lib/api'
 import {
     formatCurrency,
@@ -42,8 +41,6 @@ const AuctionDetail = () => {
     const navigate = useNavigate()
     const { user, isAuthenticated } = useAuth()
     const { socket, isConnected, joinRoom, leaveRoom, placeBid } = useSocket()
-    const { toast } = useToast()
-
     const [auction, setAuction] = useState(null)
     const [bidHistory, setBidHistory] = useState([])
     const [loading, setLoading] = useState(true)
@@ -61,6 +58,9 @@ const AuctionDetail = () => {
 
     useEffect(() => {
         if (roomId) {
+            // Reset join state every time we (re-)enter this page
+            setHasJoined(false)
+            setShowJoinConfirm(false)
             loadAuction()
         }
     }, [roomId])
@@ -136,7 +136,6 @@ const AuctionDetail = () => {
             if (error.message.includes('Passkey required') || error.message.includes('Private room')) {
                 setShowUnlockScreen(true)
             } else {
-                toast.error('Error', 'Failed to load auction details')
                 navigate('/auctions')
             }
         } finally {
@@ -158,13 +157,13 @@ const AuctionDetail = () => {
         refreshBidHistory()
 
         if (data.highestBidder !== user && !data.isRollback && data.highestBidder) {
-            toast.success('New Bid!', `${data.highestBidder} bid ${formatCurrency(data.highestBid)}`)
+            console.log('New Bid!', `${data.highestBidder} bid ${formatCurrency(data.highestBid)}`)
         }
     }
 
     const handleUserJoined = (data) => {
         if (data.username !== user) {
-            toast.success(`${data.username} joined the auction`)
+            console.log(`${data.username} joined the auction`)
         }
         if (auction && data.joinedUsers) {
             setAuction(prev => ({...prev, joinedUsers: data.joinedUsers}))
@@ -173,7 +172,7 @@ const AuctionDetail = () => {
 
     const handleUserLeft = (data) => {
         if (data.showAlert && data.username !== user) {
-            toast.info(data.message)
+            console.log(data.message)
         }
         if (auction && data.joinedUsers) {
             setAuction(prev => ({...prev, joinedUsers: data.joinedUsers}))
@@ -192,17 +191,15 @@ const AuctionDetail = () => {
                 winner: data.winner,
                 finalPrice: data.finalPrice
             }))
-
-            toast.success('Auction Ended!', `Winner: ${data.winner || 'No winner'}`)
         }
     }
 
     const handleConsecutiveBidError = (data) => {
-        toast.error('Consecutive Bid Error', data.message)
+        console.error('Consecutive Bid Error', data.message)
     }
 
     const handleSocketError = (error) => {
-        toast.error('Socket Error', error)
+        console.error('Socket Error', error)
     }
 
     const refreshBidHistory = async () => {
@@ -225,7 +222,7 @@ const AuctionDetail = () => {
         if (result && result.success) {
             // Refresh bid history immediately after successful bid
             await refreshBidHistory()
-            toast.success('Bid placed successfully!')
+            console.log('Bid placed successfully!')
         } else {
             throw new Error(result.error || 'Failed to place bid')
         }
@@ -234,17 +231,17 @@ const AuctionDetail = () => {
 
     const handleWatchlistToggle = async () => {
         if (!isAuthenticated) {
-            toast.error('Please login to use watchlist')
+            console.error('Please login to use watchlist')
             return
         }
         try {
             const response = await userAPI.toggleWatchlist(roomId)
             if (response.success) {
                 setIsWatched(response.isAdded)
-                toast.success(response.isAdded ? 'Added to watchlist' : 'Removed from watchlist')
+                console.log(response.isAdded ? 'Added to watchlist' : 'Removed from watchlist')
             }
         } catch (error) {
-            toast.error('Failed to update watchlist')
+            console.error('Failed to update watchlist')
         }
     }
 
@@ -258,7 +255,7 @@ const AuctionDetail = () => {
             await navigator.clipboard.writeText(url)
             setIsCopied(true)
             setTimeout(() => setIsCopied(false), 2000)
-            toast.success('Link copied to clipboard!')
+            console.log('Link copied to clipboard!')
         } catch (error) {
             // Fallback for older browsers
             try {
@@ -270,10 +267,10 @@ const AuctionDetail = () => {
                 textField.remove()
                 setIsCopied(true)
                 setTimeout(() => setIsCopied(false), 2000)
-                toast.success('Link copied to clipboard!')
+                console.log('Link copied to clipboard!')
             } catch (err) {
                 console.error('Failed to copy:', err)
-                toast.error('Failed to copy link', 'Please copy it manually from the address bar')
+                console.error('Failed to copy link', 'Please copy it manually from the address bar')
             }
         }
     }
@@ -286,12 +283,12 @@ const AuctionDetail = () => {
         try {
             const response = await auctionAPI.unlockRoom(roomId, passkeyInput.trim())
             if (response.success) {
-                toast.success('Room Unlocked!')
+                console.log('Room Unlocked!')
                 setLoading(true)
                 loadAuction() // Reload the auction data now that we have access
             }
         } catch (error) {
-            toast.error('Invalid Passkey', 'The passkey you entered is incorrect')
+            console.error('Invalid Passkey', 'The passkey you entered is incorrect')
         } finally {
             setUnlocking(false)
         }
@@ -303,11 +300,11 @@ const AuctionDetail = () => {
             try {
                 const response = await auctionAPI.quit(roomId)
                 if (response.success) {
-                    toast.success("Successfully exited the auction.")
+                    console.log("Successfully exited the auction.")
                     navigate('/auctions')
                 }
             } catch (error) {
-                toast.error("Failed to exit auction", error.message)
+                console.error("Failed to exit auction", error.message)
                 setIsQuitting(false)
             }
         }

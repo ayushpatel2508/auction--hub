@@ -5,13 +5,11 @@ import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { authAPI } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
-import { useToast } from '../hooks/useToast'
 import { Gavel, Mail, Lock, Eye, EyeOff } from 'lucide-react'
 
 const Login = () => {
     const navigate = useNavigate()
     const { login, isAuthenticated } = useAuth()
-    const { toast } = useToast()
 
     const [formData, setFormData] = useState({
         email: '',
@@ -72,9 +70,8 @@ const Login = () => {
                 try {
                     // Verify the browser actually saved the cookie (catches Incognito blocking)
                     await authAPI.verifyAuth()
-                    
+
                     const username = result.username || result.user?.username
-                    toast.success('Welcome Back!', `Successfully signed in as ${username}`)
                     login(username || 'User')
 
                     // Small delay to ensure state is updated
@@ -82,12 +79,13 @@ const Login = () => {
                         navigate('/', { replace: true })
                     }, 100)
                 } catch (verifyError) {
-                    toast.error('Cookies Blocked', 'Your browser blocked the login cookie. If you are using Incognito Mode, please use a normal window to log in.')
-                    await authAPI.logout().catch(() => {})
+                    console.error('Cookies blocked:', verifyError)
+                    await authAPI.logout().catch(() => { })
                 }
             }
         } catch (error) {
-            toast.error('Login Failed', error.response?.data?.msg || error.message || 'Please check your credentials and try again.')
+            console.error('Login error:', error)
+            setErrors({ email: error.response?.data?.msg || error.message || 'Please check your credentials and try again.' })
         } finally {
             setLoading(false)
         }
