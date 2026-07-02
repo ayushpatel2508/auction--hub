@@ -299,6 +299,9 @@ export const quitAuction = async (req, res, io) => {
       ? `Auction creator ${username} has left the auction.`
       : `${username} has left the auction`;
 
+    // Populate joinedUsers before emitting so frontend has username objects
+    await auction.populate('joinedUsers', 'username');
+
     // Emit to socket for real-time notification to other users
     io.to(roomId).emit("user-quit-auction", {
       username: username,

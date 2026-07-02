@@ -168,6 +168,9 @@ const AuctionDetail = () => {
         if (data.username !== user) {
             toast.success(`${data.username} joined the auction`)
         }
+        if (auction && data.joinedUsers) {
+            setAuction(prev => ({...prev, joinedUsers: data.joinedUsers}))
+        }
     }
 
     const handleUserLeft = (data) => {

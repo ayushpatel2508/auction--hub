@@ -225,15 +225,17 @@ io.on("connection", (socket) => {
 
       // Check if this is the FIRST time they join
       if (!auction.joinedUsers.some(id => id.equals(user._id))) {
-        await Auction.updateOne(
+        const updatedAuction = await Auction.findOneAndUpdate(
           { roomId },
-          { $addToSet: { joinedUsers: user._id } }
-        );
+          { $addToSet: { joinedUsers: user._id } },
+          { new: true }
+        ).populate('joinedUsers', 'username');
         
         // Notify others
         socket.to(roomId).emit("user-joined-notification", {
           username: username,
           message: `${username} joined the auction`,
+          joinedUsers: updatedAuction.joinedUsers
         });
       }
 

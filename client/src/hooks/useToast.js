@@ -1,44 +1,53 @@
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+
+let memoryState = []
+let listeners = []
+
+const notify = () => {
+  listeners.forEach(listener => listener(memoryState))
+}
+
+const addToast = (toast) => {
+  const id = Math.random().toString(36).substr(2, 9)
+  const newToast = { id, ...toast }
+  
+  memoryState = [...memoryState, newToast]
+  notify()
+  
+  setTimeout(() => {
+    memoryState = memoryState.filter(t => t.id !== id)
+    notify()
+  }, toast.duration || 10000)
+  
+  return id
+}
+
+const removeToast = (id) => {
+  memoryState = memoryState.filter(t => t.id !== id)
+  notify()
+}
+
+const toast = (options) => {
+  if (typeof options === 'string') {
+    return addToast({ title: options, variant: 'default' })
+  }
+  return addToast(options)
+}
+
+toast.success = (title, description) => addToast({ title, description, variant: 'success' })
+toast.error = (title, description) => addToast({ title, description, variant: 'destructive' })
+toast.warning = (title, description) => addToast({ title, description, variant: 'warning' })
+toast.info = (title, description) => addToast({ title, description, variant: 'default' })
 
 export const useToast = () => {
-  const [toasts, setToasts] = useState([])
+  const [toasts, setToasts] = useState(memoryState)
 
-  const addToast = useCallback((toast) => {
-    const id = Math.random().toString(36).substr(2, 9)
-    const newToast = { id, ...toast }
-    
-    setToasts(prev => [...prev, newToast])
-    
-    // Auto remove after duration
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id))
-    }, toast.duration || 10000)
-    
-    return id
-  }, [])
-
-  const removeToast = useCallback((id) => {
-    setToasts(prev => prev.filter(t => t.id !== id))
-  }, [])
-
-  const toast = useCallback((options) => {
-    if (typeof options === 'string') {
-      return addToast({ title: options, variant: 'default' })
+  useEffect(() => {
+    listeners.push(setToasts)
+    return () => {
+      listeners = listeners.filter(l => l !== setToasts)
     }
-    return addToast(options)
-  }, [addToast])
-
-  toast.success = useCallback((title, description) => {
-    return addToast({ title, description, variant: 'success' })
-  }, [addToast])
-
-  toast.error = useCallback((title, description) => {
-    return addToast({ title, description, variant: 'destructive' })
-  }, [addToast])
-
-  toast.warning = useCallback((title, description) => {
-    return addToast({ title, description, variant: 'warning' })
-  }, [addToast])
+  }, [])
 
   return {
     toasts,
