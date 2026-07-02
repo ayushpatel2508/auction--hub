@@ -64,7 +64,7 @@ const AuctionDetail = () => {
     }, [roomId])
 
     useEffect(() => {
-        if (socket && auction && isAuthenticated) {
+        if (socket && auction && isAuthenticated && isConnected) {
             joinRoom(roomId)
 
             socket.on('bid-placed', handleBidPlaced)
@@ -88,7 +88,7 @@ const AuctionDetail = () => {
                 leaveRoom(roomId)
             }
         }
-    }, [socket, auction, isAuthenticated, roomId])
+    }, [socket, auction, isAuthenticated, roomId, isConnected])
 
     useEffect(() => {
         if (auction) {
@@ -107,6 +107,17 @@ const AuctionDetail = () => {
                 setBidHistory(response.auction.bidHistory || [])
                 setTimeRemaining(formatTimeRemaining(response.auction.endTime))
                 setShowUnlockScreen(false)
+                
+                if (isAuthenticated) {
+                    try {
+                        const watchRes = await userAPI.getWatchlist()
+                        if (watchRes.auctions) {
+                            setIsWatched(watchRes.auctions.some(a => a.roomId === roomId || a._id === roomId))
+                        }
+                    } catch (e) {
+                        console.error("Failed to load watchlist status", e)
+                    }
+                }
             }
         } catch (error) {
             console.error('Error loading auction:', error)
@@ -220,9 +231,20 @@ const AuctionDetail = () => {
         return result
     }
 
-    const handleWatchlistToggle = () => {
-        setIsWatched(!isWatched)
-        toast.success(isWatched ? 'Removed from watchlist' : 'Added to watchlist')
+    const handleWatchlistToggle = async () => {
+        if (!isAuthenticated) {
+            toast.error('Please login to use watchlist')
+            return
+        }
+        try {
+            const response = await userAPI.toggleWatchlist(roomId)
+            if (response.success) {
+                setIsWatched(response.isAdded)
+                toast.success(response.isAdded ? 'Added to watchlist' : 'Removed from watchlist')
+            }
+        } catch (error) {
+            toast.error('Failed to update watchlist')
+        }
     }
 
     const handleShare = () => {
@@ -437,7 +459,15 @@ const AuctionDetail = () => {
                         <CardHeader>
                             <div className="flex items-start justify-between">
                                 <div className="space-y-2">
-                                    <CardTitle className="text-2xl">{auction.title}</CardTitle>
+                                    <div className="flex items-center space-x-3">
+                                        <CardTitle className="text-2xl">{auction.title}</CardTitle>
+                                        {auction.isPrivate && (
+                                            <div className="bg-red-500 text-white px-3 py-1 rounded-full flex items-center space-x-1 text-sm font-semibold">
+                                                <span>Private</span>
+                                                <Lock className="h-4 w-4" />
+                                            </div>
+                                        )}
+                                    </div>
                                     <p className="text-lg text-muted-foreground">{auction.productName}</p>
                                 </div>
 

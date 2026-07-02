@@ -158,9 +158,12 @@ const Auctions = () => {
         try {
             const response = await userAPI.toggleWatchlist(roomId)
             if (response.success) {
-                setWatchlist(response.watchlist)
-                const isAdded = response.watchlist.includes(roomId)
-                toast.success(isAdded ? 'Added to watchlist' : 'Removed from watchlist')
+                setWatchlist(prev => 
+                    response.isAdded 
+                        ? [...prev, roomId] 
+                        : prev.filter(id => id !== roomId)
+                )
+                toast.success(response.isAdded ? 'Added to watchlist' : 'Removed from watchlist')
             }
         } catch (error) {
             toast.error('Error', 'Failed to update watchlist')

@@ -6,10 +6,7 @@ import { User } from "../models/user.js";
 // Ensure environment variables are loaded
 dotenv.config();
 
-// TEST ROUTE
-export const testAuth = (req, res) => {
-  res.json({ message: "Auth routes working!" });
-};
+
 
 // 1. REGISTER
 export const register = async (req, res) => {
@@ -24,10 +21,10 @@ export const register = async (req, res) => {
       });
     }
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       return res.status(400).json({
         success: false,
-        msg: "Password must be at least 6 characters",
+        msg: "Password must be at least 8 characters",
       });
     }
 

@@ -48,8 +48,8 @@ const Login = () => {
 
         if (!formData.password) {
             newErrors.password = 'Password is required'
-        } else if (formData.password.length < 6) {
-            newErrors.password = 'Password must be at least 6 characters'
+        } else if (formData.password.length < 8) {
+            newErrors.password = 'Password must be at least 8 characters'
         } else if (formData.password.length > 25) {
             newErrors.password = 'Password must not exceed 25 characters'
         }
@@ -69,16 +69,22 @@ const Login = () => {
             const result = await authAPI.login(formData)
 
             if (result.success) {
-                const username = result.username || result.user?.username
+                try {
+                    // Verify the browser actually saved the cookie (catches Incognito blocking)
+                    await authAPI.verifyAuth()
+                    
+                    const username = result.username || result.user?.username
+                    toast.success('Welcome Back!', `Successfully signed in as ${username}`)
+                    login(username || 'User')
 
-                toast.success('Welcome Back!', `Successfully signed in as ${username}`)
-
-                login(username || 'User')
-
-                // Small delay to ensure state is updated
-                setTimeout(() => {
-                    navigate('/', { replace: true })
-                }, 100)
+                    // Small delay to ensure state is updated
+                    setTimeout(() => {
+                        navigate('/', { replace: true })
+                    }, 100)
+                } catch (verifyError) {
+                    toast.error('Cookies Blocked', 'Your browser blocked the login cookie. If you are using Incognito Mode, please use a normal window to log in.')
+                    await authAPI.logout().catch(() => {})
+                }
             }
         } catch (error) {
             toast.error('Login Failed', error.response?.data?.msg || error.message || 'Please check your credentials and try again.')

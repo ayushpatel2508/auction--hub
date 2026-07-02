@@ -4,12 +4,14 @@ import { AuthProvider } from './contexts/AuthContext'
 import { ModalProvider } from './contexts/ModalContext'
 import Layout from './components/layout/Layout'
 import ProtectedRoute from './components/common/ProtectedRoute'
+import ScrollToTop from './components/ScrollToTop'
 
 // Pages
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Auctions from './pages/Auctions'
+import WonAuctions from './pages/WonAuctions'
 import AuctionDetail from './pages/AuctionDetail'
 import Dashboard from './pages/Dashboard'
 import Categories from './pages/Categories'
@@ -23,6 +25,7 @@ function App() {
         <AuthProvider>
             <ModalProvider>
                 <Router>
+                    <ScrollToTop />
                     <Routes>
                     {/* Public routes */}
                     <Route path="/login" element={<Login />} />
@@ -86,7 +89,7 @@ function App() {
                     <Route path="/won-auctions" element={
                         <ProtectedRoute>
                             <Layout>
-                                <ComingSoon title="Won Auctions" description="View and manage auctions you've won" />
+                                <WonAuctions />
                             </Layout>
                         </ProtectedRoute>
                     } />

@@ -62,8 +62,8 @@ const Register = () => {
 
         if (!formData.password) {
             newErrors.password = 'Password is required'
-        } else if (formData.password.length < 6) {
-            newErrors.password = 'Password must be at least 6 characters'
+        } else if (formData.password.length < 8) {
+            newErrors.password = 'Password must be at least 8 characters'
         } else if (formData.password.length > 36) {
             newErrors.password = 'Password must not exceed 36 characters'
         }
@@ -93,15 +93,23 @@ const Register = () => {
             })
 
             if (result.success) {
-                toast.success('Account Created!', 'Welcome to AuctionHub! You can now start bidding.')
+                try {
+                    // Verify the browser actually saved the cookie (catches Incognito blocking)
+                    await authAPI.verifyAuth()
+                    
+                    toast.success('Account Created!', 'Welcome to AuctionHub! You can now start bidding.')
 
-                // Login the user immediately
-                login(result.username)
+                    // Login the user immediately
+                    login(result.username)
 
-                // Small delay to ensure state is updated
-                setTimeout(() => {
-                    navigate('/', { replace: true })
-                }, 100)
+                    // Small delay to ensure state is updated
+                    setTimeout(() => {
+                        navigate('/', { replace: true })
+                    }, 100)
+                } catch (verifyError) {
+                    toast.error('Cookies Blocked', 'Account created, but your browser blocked the login cookie. If you are using Incognito Mode, please use a normal window to log in.')
+                    await authAPI.logout().catch(() => {})
+                }
             }
         } catch (error) {
             toast.error('Registration Failed', error.response?.data?.msg || error.message || 'Please try again with different credentials.')
@@ -115,8 +123,8 @@ const Register = () => {
         if (!password) return { strength: 0, text: '', color: '' }
 
         let strength = 0
-        if (password.length >= 6) strength++
         if (password.length >= 8) strength++
+        if (password.length >= 10) strength++
         if (/[A-Z]/.test(password)) strength++
         if (/[0-9]/.test(password)) strength++
         if (/[^A-Za-z0-9]/.test(password)) strength++

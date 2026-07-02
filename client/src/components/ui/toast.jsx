@@ -42,7 +42,16 @@ const Toast = React.forwardRef(({ className, variant, ...props }, ref) => {
             ref={ref}
             className={cn(toastVariants({ variant }), className)}
             {...props}
-        />
+        >
+            <div className="flex-1 w-full flex items-center justify-between space-x-4">
+                {props.children}
+            </div>
+            
+            {/* Progress Bar Container */}
+            <div className="absolute bottom-0 left-0 h-1 w-full overflow-hidden bg-black/10">
+                <div className="h-full bg-current opacity-50 animate-toast-progress" />
+            </div>
+        </ToastPrimitives.Root>
     )
 })
 Toast.displayName = ToastPrimitives.Root.displayName

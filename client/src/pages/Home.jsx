@@ -22,6 +22,11 @@ import {
     CreditCard
 } from 'lucide-react'
 
+const getRoundedCount = (num) => {
+    if (num < 10) return num;
+    return `${Math.floor(num / 10) * 10}+`;
+}
+
 const Home = () => {
     const { isAuthenticated } = useAuth()
     const { openCreateAuction } = useModal()
@@ -68,7 +73,11 @@ const Home = () => {
         try {
             const response = await userAPI.toggleWatchlist(roomId)
             if (response.success) {
-                setWatchlist(response.watchlist)
+                setWatchlist(prev => 
+                    response.isAdded 
+                        ? [...prev, roomId] 
+                        : prev.filter(id => id !== roomId)
+                )
             }
         } catch (error) {
             console.error('Error toggling watchlist:', error)
@@ -134,15 +143,15 @@ const Home = () => {
                 {/* Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-2xl mx-auto pt-8">
                     <div className="text-center">
-                        <div className="text-3xl font-bold text-primary">{stats.totalAuctions}+</div>
+                        <div className="text-3xl font-bold text-primary">{getRoundedCount(stats.totalAuctions)}</div>
                         <div className="text-sm text-muted-foreground">Total Auctions</div>
                     </div>
                     <div className="text-center">
-                        <div className="text-3xl font-bold text-primary">{stats.totalUsers}+</div>
+                        <div className="text-3xl font-bold text-primary">{getRoundedCount(stats.totalUsers)}</div>
                         <div className="text-sm text-muted-foreground">Registered Users</div>
                     </div>
                     <div className="text-center">
-                        <div className="text-3xl font-bold text-primary">{stats.totalBids}+</div>
+                        <div className="text-3xl font-bold text-primary">{getRoundedCount(stats.totalBids)}</div>
                         <div className="text-sm text-muted-foreground">Bids Placed</div>
                     </div>
                 </div>

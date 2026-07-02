@@ -128,3 +128,13 @@
     visibility: visible;
     transform: translateY(0);
 }
+
+/* Toast Progress Bar */
+@keyframes toast-progress {
+    0% { width: 100%; }
+    100% { width: 0%; }
+}
+
+.animate-toast-progress {
+    animation: toast-progress linear forwards;
+}

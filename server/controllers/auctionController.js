@@ -3,6 +3,7 @@ import { User } from "../models/user.js";
 import { Bid } from "../models/bid.js";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 
 import { uploadToCloudinary, deleteFromCloudinary } from "../middleware/cloudinaryUpload.js";
 
@@ -53,6 +54,11 @@ export const createAuction = async (req, res) => {
         .json({ msg: `Auction with roomId ${roomId} already exists` });
     }
 
+    let hashedPasskey = null;
+    if (passkey) {
+      hashedPasskey = await bcrypt.hash(passkey, 10);
+    }
+
     const newAuction = await Auction.create({
       roomId,
       title,
@@ -68,13 +74,16 @@ export const createAuction = async (req, res) => {
       createdBy: req.user._id,
       status: "active",
       isPrivate: isPrivate === 'true' || isPrivate === true,
-      passkey: passkey
+      passkey: hashedPasskey
     });
+
+    const auctionResponse = newAuction.toObject();
+    auctionResponse.passkey = passkey; // Return plain passkey to the creator once
 
     res.status(201).json({
       success: true,
       msg: "Auction created successfully",
-      auction: newAuction,
+      auction: auctionResponse,
     });
   } catch (err) {
     res.status(500).json({
@@ -698,8 +707,12 @@ export const unlockPrivateRoom = async (req, res) => {
 
     if (!auction.isPrivate) return res.status(400).json({ success: false, msg: "Not a private room" });
 
-    // Compare passkey case-insensitively
-    if (!passkey || passkey.toUpperCase() !== auction.passkey) {
+    // Compare passkey case-insensitively using bcrypt
+    if (!passkey) {
+      return res.status(400).json({ success: false, msg: "Invalid passkey" });
+    }
+    const isMatch = await bcrypt.compare(passkey.toUpperCase(), auction.passkey);
+    if (!isMatch) {
       return res.status(400).json({ success: false, msg: "Invalid passkey" });
     }
 
