@@ -56,6 +56,8 @@ const AuctionDetail = () => {
     const [showShareDialog, setShowShareDialog] = useState(false)
     const [isCopied, setIsCopied] = useState(false)
     const [showParticipantsDialog, setShowParticipantsDialog] = useState(false)
+    const [showJoinConfirm, setShowJoinConfirm] = useState(false)
+    const [hasJoined, setHasJoined] = useState(false)
 
     useEffect(() => {
         if (roomId) {
@@ -64,10 +66,10 @@ const AuctionDetail = () => {
     }, [roomId])
 
     useEffect(() => {
-        if (socket && auction && isAuthenticated && isConnected) {
+        if (socket && auction && isAuthenticated && isConnected && hasJoined) {
             joinRoom(roomId)
 
-            socket.on('bid-placed', handleBidPlaced)
+            // Remove duplicate bid-placed listener, bid-update handles all
             socket.on('bid-update', handleBidUpdate)
             socket.on('user-joined-notification', handleUserJoined)
             socket.on('user-quit-auction', handleUserLeft)
@@ -77,7 +79,7 @@ const AuctionDetail = () => {
             socket.on('error', handleSocketError)
 
             return () => {
-                socket.off('bid-placed')
+                // removed bid-placed
                 socket.off('bid-update')
                 socket.off('user-joined-notification')
                 socket.off('user-quit-auction')
@@ -108,6 +110,16 @@ const AuctionDetail = () => {
                 setTimeRemaining(formatTimeRemaining(response.auction.endTime))
                 setShowUnlockScreen(false)
                 
+                // Determine if user has already joined
+                const userInList = response.auction.joinedUsers?.some(u => u.username === user)
+                const isCreator = response.auction.createdBy?.username === user
+                
+                if (userInList || isCreator) {
+                    setHasJoined(true)
+                } else {
+                    setShowJoinConfirm(true)
+                }
+                
                 if (isAuthenticated) {
                     try {
                         const watchRes = await userAPI.getWatchlist()
@@ -132,21 +144,7 @@ const AuctionDetail = () => {
         }
     }
 
-    const handleBidPlaced = (data) => {
-        if (data.roomId === roomId) {
-            setAuction(prev => ({
-                ...prev,
-                currentBid: data.amount,
-                highestBidder: data.username
-            }))
-
-            setBidHistory(prev => [data, ...prev])
-
-            if (data.username !== user) {
-                toast.success('New Bid!', `${data.username} bid ${formatCurrency(data.amount)}`)
-            }
-        }
-    }
+    // removed handleBidPlaced entirely
 
     const handleBidUpdate = (data) => {
         // Handle bid updates from socket
@@ -315,6 +313,15 @@ const AuctionDetail = () => {
         }
     }
 
+    const handleConfirmJoin = () => {
+        setShowJoinConfirm(false)
+        setHasJoined(true)
+    }
+
+    const handleCancelJoin = () => {
+        navigate('/auctions')
+    }
+
     if (loading) {
         return (
             <div className="space-y-6">
@@ -349,20 +356,48 @@ const AuctionDetail = () => {
                         <p className="text-muted-foreground mb-6">
                             This is a private auction. You need a passkey from the creator to view or bid on this item.
                         </p>
+
                         <form onSubmit={handleUnlock} className="space-y-4">
-                            <div className="relative">
-                                <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-left block">Passkey</label>
                                 <input
                                     type="text"
-                                    placeholder="Enter passkey"
                                     value={passkeyInput}
-                                    onChange={(e) => setPasskeyInput(e.target.value)}
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pl-10 text-center tracking-widest font-mono font-bold uppercase"
-                                    disabled={unlocking}
+                                    onChange={(e) => setPasskeyInput(e.target.value.toUpperCase())}
+                                    placeholder="Enter Passkey (e.g. A1B2C3)"
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm uppercase text-center tracking-widest font-mono font-bold"
                                     maxLength={8}
+                                    required
                                 />
                             </div>
                             <Button type="submit" className="w-full" disabled={!passkeyInput.trim() || unlocking}>
+                                {unlocking ? 'Unlocking...' : 'Unlock Room'}
+                            </Button>
+                        </form>
+                        <Button variant="ghost" className="w-full mt-2" onClick={() => navigate('/auctions')}>
+                            Back to Auctions
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        )
+    }
+
+    if (showJoinConfirm && auction) {
+        return (
+            <div className="min-h-[80vh] flex items-center justify-center">
+                <Card className="w-full max-w-md shadow-lg animate-in fade-in zoom-in-95">
+                    <CardHeader className="text-center">
+                        <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                            <Gavel className="h-6 w-6 text-primary" />
+                        </div>
+                        <CardTitle className="text-2xl">Join Auction Room</CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-center space-y-6">
+                        <p className="text-muted-foreground">
+                            You are about to enter the room for <span className="font-semibold text-foreground">{auction.title}</span>. 
+                            If you join, your name will be visible to other participants.
+                        </p>
                                 {unlocking ? 'Verifying...' : 'Unlock Room'}
                             </Button>
                         </form>
