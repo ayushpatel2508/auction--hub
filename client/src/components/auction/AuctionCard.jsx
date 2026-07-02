@@ -46,7 +46,7 @@ const AuctionCard = ({ auction, onWatchlistToggle, isWatched = false }) => {
 
     return (
         <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
-            <Link to={`/auction/${auction.roomId}`}>
+            <div className="flex flex-col h-full">
                 {/* Image */}
                 <div className="relative aspect-video bg-muted overflow-hidden">
                     {auction.imageUrl ? (
@@ -156,12 +156,14 @@ const AuctionCard = ({ auction, onWatchlistToggle, isWatched = false }) => {
                     </div>
                 </CardContent>
 
-                <CardFooter className="p-4 pt-0">
-                    <Button className="w-full" disabled={status.status === 'ended'}>
-                        {status.status === 'ended' ? 'Auction Ended' : 'Place Bid'}
-                    </Button>
+                <CardFooter className="p-4 pt-0 mt-auto">
+                    <Link to={`/auction/${auction.roomId}`} className="w-full">
+                        <Button className="w-full" disabled={status.status === 'ended'}>
+                            {status.status === 'ended' ? 'Auction Ended' : 'Place Bid'}
+                        </Button>
+                    </Link>
                 </CardFooter>
-            </Link>
+            </div>
         </Card>
     )
 }

@@ -157,7 +157,7 @@ const AuctionDetail = () => {
         // Refresh bid history after bid update
         refreshBidHistory()
 
-        if (data.highestBidder !== user) {
+        if (data.highestBidder !== user && !data.isRollback && data.highestBidder) {
             toast.success('New Bid!', `${data.highestBidder} bid ${formatCurrency(data.highestBid)}`)
         }
     }
@@ -316,6 +316,10 @@ const AuctionDetail = () => {
     const handleConfirmJoin = () => {
         setShowJoinConfirm(false)
         setHasJoined(true)
+        setAuction(prev => ({
+            ...prev,
+            joinedUsers: [...(prev.joinedUsers || []), { username: user }]
+        }))
     }
 
     const handleCancelJoin = () => {
@@ -398,9 +402,14 @@ const AuctionDetail = () => {
                             You are about to enter the room for <span className="font-semibold text-foreground">{auction.title}</span>. 
                             If you join, your name will be visible to other participants.
                         </p>
-                                {unlocking ? 'Verifying...' : 'Unlock Room'}
+                        <div className="flex gap-4">
+                            <Button variant="outline" className="w-full" onClick={handleCancelJoin}>
+                                Cancel
                             </Button>
-                        </form>
+                            <Button className="w-full" onClick={handleConfirmJoin}>
+                                Join Room
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
             </div>

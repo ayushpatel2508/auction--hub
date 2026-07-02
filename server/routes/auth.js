@@ -1,11 +1,8 @@
 import express from "express";
 import { isLoggedIn } from "../middleware/isloggedIn.js";
-import { testAuth, register, login, logout, verifyToken } from "../controllers/authController.js";
+import { register, login, logout, verifyToken } from "../controllers/authController.js";
 
 const router = express.Router();
-
-// TEST ROUTE
-router.get("/test", testAuth);
 
 // 1. REGISTER
 router.post("/register", register);

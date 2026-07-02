@@ -313,7 +313,7 @@ export const quitAuction = async (req, res, io) => {
     // Also emit a bid update if a rollback happened
     io.to(roomId).emit("bid-update", {
       highestBid: auction.currentBid,
-      highestBidder: auction.highestBidder,
+      highestBidder: highestRemainingBid && highestRemainingBid.user ? highestRemainingBid.user.username : null,
       roomId: roomId,
       isRollback: true
     });
